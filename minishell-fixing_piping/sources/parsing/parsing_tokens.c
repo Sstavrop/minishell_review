@@ -104,10 +104,12 @@ void	finalize_current_command(t_minishell **commands,
 	}
 }
 
-t_minishell *parse_tokens_into_commands(t_minishell *tokens) {
+t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms) { //definition
     t_minishell *commands = NULL;
     t_minishell *current_command = NULL;
 
+    if (ms == NULL)
+        return (NULL);//this does nothing other than to silence a warning by the compiler
     if (!tokens)
         return NULL;
 
@@ -116,22 +118,20 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens) {
         return NULL;
     commands = current_command;
 
-    while (tokens != NULL) 
-    {
-        if (tokens->type == T_WORD || tokens->type == T_DOUBLEQUOTE || tokens->type == T_OPTION) 
-        {
+    while (tokens != NULL) {
+        if (tokens->type == T_WORD || tokens->type == T_DOUBLEQUOTE || tokens->type == T_OPTION) {
             add_argument_to_command(current_command, tokens->value);
+
         }
-        else if (tokens->type == T_INPUT || tokens->type == T_OUTPUT || tokens->type == T_APPEND || tokens->type == T_HEREDOC) 
-        {
-            if (!set_redirection(current_command, tokens)) 
-            {
+        else if (tokens->type == T_INPUT || tokens->type == T_OUTPUT || tokens->type == T_APPEND || tokens->type == T_HEREDOC) {
+            if (!set_redirection(current_command, tokens)) {
                 free_command_list(commands);
                 return NULL;
             }
-            tokens = tokens->next;
+            tokens = tokens->next; //skip
         }
-        else if (tokens->type == T_PIPE || tokens->type == T_SEMICOLON) { // Re-enable
+        else if (tokens->type == T_PIPE || tokens->type == T_SEMICOLON) {
+            current_command->pipe_count++;
             if (tokens->type == T_PIPE)
                 current_command->operator = PIPE;
             else
@@ -139,13 +139,59 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens) {
 
             t_minishell *new_command = create_new_command();
             if (!new_command) {
-                free_command_list(commands);
+                free_command_list(commands); //free previous commands
                 return NULL;
             }
-            current_command->next_command = new_command;
-            current_command = new_command;
+            current_command->next_command = new_command; //link commands
+            current_command = new_command; // Move to the new command.
         }
         tokens = tokens->next;
     }
     return (commands);
 }
+
+// t_minishell *parse_tokens_into_commands(t_minishell *tokens) {
+//     t_minishell *commands = NULL;
+//     t_minishell *current_command = NULL;
+
+//     if (!tokens)
+//         return NULL;
+
+//     current_command = create_new_command();
+//     if (!current_command)
+//         return NULL;
+//     commands = current_command;
+
+//     while (tokens != NULL) 
+//     {
+//         if (tokens->type == T_WORD || tokens->type == T_DOUBLEQUOTE || tokens->type == T_OPTION) 
+//         {
+//             add_argument_to_command(current_command, tokens->value);
+//         }
+//         else if (tokens->type == T_INPUT || tokens->type == T_OUTPUT || tokens->type == T_APPEND || tokens->type == T_HEREDOC) 
+//         {
+//             if (!set_redirection(current_command, tokens)) 
+//             {
+//                 free_command_list(commands);
+//                 return NULL;
+//             }
+//             tokens = tokens->next;
+//         }
+//         else if (tokens->type == T_PIPE || tokens->type == T_SEMICOLON) { // Re-enable
+//             if (tokens->type == T_PIPE)
+//                 current_command->operator = PIPE;
+//             else
+//                 current_command->operator = NO_OPERATOR; //Or T_SEMICOLON
+
+//             t_minishell *new_command = create_new_command();
+//             if (!new_command) {
+//                 free_command_list(commands);
+//                 return NULL;
+//             }
+//             current_command->next_command = new_command;
+//             current_command = new_command;
+//         }
+//         tokens = tokens->next;
+//     }
+//     return (commands);
+// }

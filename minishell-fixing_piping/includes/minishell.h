@@ -199,7 +199,7 @@ void					handle_word_token(t_minishell **current_command,
 							t_minishell **commands);
 void					finalize_current_command(t_minishell **commands,
 							t_minishell **current_command);
-t_minishell				*parse_tokens_into_commands(t_minishell *tokens);
+t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
 
 /****************************************************************/
 /*																*/
@@ -260,24 +260,19 @@ void					ft_unset(t_minishell *ms);
 /****************************************************************/
 
 /* --- execute_builtins.c --- */
-void					exec_builtin(t_minishell *ms);
+void					exec_builtin(t_minishell *ms, t_minishell *command);
 int						is_builtin(t_minishell *ms);
-void					execute_piped_commands(t_minishell *commands,
-							t_minishell *ms);
 void					execute_commands_loop(t_minishell *ms,
 							t_minishell *commands, int heredoc_num);
 void					execute_command(t_minishell *ms,
 							t_minishell *token_list, int heredoc_num);
 
 /* --- handle_pipes.c --- */
-int						contains_pipe(t_minishell *commands);
-int						count_pipes(t_minishell *commands);
-void					child_process(int *pipefd, t_minishell *ms,
-							t_minishell *cmd_list, int prev_fd);
-void					parent_process(int *pipefd, t_minishell *cmd_list,
-							int *prev_fd);
-void					handle_pipe(t_minishell *ms, t_minishell *cmd_list,
-							int prev_fd, int num_of_pipes);
+int create_pipe(int pipe_fds[2]);
+void close_fd(int fd);
+int dup2_and_close(int oldfd, int newfd);
+void handle_pipes(t_minishell *ms, t_minishell *commands);
+int contains_pipe(t_minishell *commands);
 
 /* --- pather.c --- */
 char					*handle_absolute_or_relative(char *cmd);
