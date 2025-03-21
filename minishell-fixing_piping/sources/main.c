@@ -12,8 +12,6 @@
 
 #include "minishell.h"
 
-int		g_signal_status = 0;
-
 void	setup_termios(void)
 {
 	struct termios	termios;
@@ -29,6 +27,11 @@ void init_minishell_first_time(t_minishell *ms, char **env)
 {
     ms->ter_in = dup(STDIN_FILENO);
     ms->ter_out = dup(STDOUT_FILENO);
+    if (ms->ter_in == -1 || ms->ter_out == -1)
+    {
+        perror("dup");
+        exit(EXIT_FAILURE);
+    }
     ms->env = env; 
     ms->env_dup = NULL;
     ms->err_prev = 0;
@@ -36,7 +39,6 @@ void init_minishell_first_time(t_minishell *ms, char **env)
     ms->i = 0;
     ms->j = 0;
     ms->err = 0;
-    ms->output = 0;
     ms->oldpwd = NULL;
     ms->input = NULL;
     ms->value = NULL;
@@ -48,14 +50,12 @@ void init_minishell_first_time(t_minishell *ms, char **env)
     ms->export = NULL;
     ms->arguments = NULL;
     ms->arguments_tmp = NULL;
-    ms->arguments_size = NULL;
     ms->append = 0;
     ms->infile = NULL;
     ms->outfile = NULL;
     ms->operator = NO_OPERATOR;
     ms->pipe_count = 0;
 	ms->pid = 0;
-	ms->pipe_fds = NULL;
     ms->heredoc_num = 0;
     env_init(ms);
 }
@@ -74,11 +74,6 @@ void reset_minishell_state(t_minishell *ms)
     }
     if (ms->arguments_tmp) 
         ms->arguments_tmp = NULL;
-    if (ms->arguments_size) 
-    {
-        free(ms->arguments_size);
-        ms->arguments_size = NULL;
-    }
     ms->append = 0;
     ms->infile = NULL;
     ms->outfile = NULL;
@@ -102,10 +97,13 @@ int	main(int argc, char **argv, char **envp)
 	{
 		reset_minishell_state(&ms);
 		ms.input = prompt();
-		if (!ms.input || *ms.input == '\0')
+        if(!ms.input)
+            break;//or exit(EXIT_SUCCESS);
+		if (*ms.input == '\0')
 		{
 			free(ms.input);
-			continue ;
+			ms.input = NULL;
+            continue ;
 		}
 		token_list = tokenize_input(ms.input, &ms);
 		if (!token_list)
@@ -115,7 +113,7 @@ int	main(int argc, char **argv, char **envp)
 		}
 		execute_command(&ms, token_list, heredoc_num);
 		heredoc_num++;
-		free_token_list(token_list);
+		// free_token_list(token_list);
 		free(ms.input);
 	}
 	rl_clear_history();

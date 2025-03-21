@@ -24,7 +24,7 @@ void	ft_exit(t_minishell *ms)
 		while (ms->arguments[++i])
 			free(ms->arguments[i]);
 		free(ms->arguments);
-		free(ms->arguments_size);
+		// free(ms->arguments_size);
 	}
 	// if we have to handle various exit instances/scnearios
 	if (!ms->prompt)

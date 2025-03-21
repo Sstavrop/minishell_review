@@ -12,6 +12,8 @@
 
 #include "minishell.h"
 
+int		g_signal_status = 0;
+
 void	signal_handler(int signum)
 {
 	if (signum == SIGINT && g_signal_status == 1)

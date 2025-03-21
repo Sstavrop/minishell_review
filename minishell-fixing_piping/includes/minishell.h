@@ -50,7 +50,7 @@ typedef enum e_token_types
 	T_SINGLEQUOTE,
 	T_DOUBLEQUOTE,
 	T_SEMICOLON,
-	T_OPTION
+	T_OPTION//possibly remove
 }						t_token_types;
 
 typedef struct s_env
@@ -64,39 +64,39 @@ typedef struct s_env
 typedef struct s_minishell
 {
 
-	int					x;
-	int					i;
-	int					j;
+	int					x;// possibly remove if you change mini_split
+	int					i;// possibly remove if you change mini_split
+	int					j;// possibly remove if you change mini_split
 	int					err;
 	int					err_prev;
-	int					ter_in;
-	int					ter_out;
-	int					output;
-	char				**arguments;
-	char				**arguments_tmp;
-	int					*arguments_size;
-	char				**env;
+	int					ter_in;// original stdin fd
+	int					ter_out;//riginal stdout fd
+	// int					output;// i cant find
+	char				**arguments; //arg array for the *current*command
+	char				**arguments_tmp;//temp  arguments --Only used for builtins
+	// int					*arguments_size;//possibly remove if not used (i think its not used anywhere at all.)
+	char				**env; //original environemtn taken from the mains envp
 	char				*prompt;
 	char				*oldpwd;
-	char				*input;
-	int					last_exit_status;
-	t_token_types		type;
-	char				*value;
-	int					append;
-	struct s_minishell	*next;
-	t_token_types		operator;
-	char				*infile;
-	char				*outfile;
-	int					input_fd;
-	int					output_fd;
-	int					pipe_count;
-	pid_t				pid;
-	int					*pipe_fds;
-	int					heredoc_num;
-	struct s_minishell	*next_command;
-	t_env				*env_dup;
-	t_env				*env_dup2;
-	t_env				*export;
+	char				*input;//raw input line from readline
+	int					last_exit_status;//exit status of the last command
+	t_token_types		type;//type of the current token
+	char				*value;// value of the current token
+	int					append;//flad for append redirection (>>)
+	struct s_minishell	*next;//next token in the token list
+	t_token_types		operator;//typoe of operator (PIPE, NO_OPERATOR, etc...)
+	char				*infile;//input redirection fiile
+	char				*outfile;//output redirection file
+	int					input_fd;//fd for the input redirection
+	int					output_fd;//fd for the output redirection
+	int					pipe_count;//number of pipes in the current command line
+	pid_t				pid;//PID of chile process
+	// int					*pipe_fds;//i think i can remove now
+	int					heredoc_num;//trrack heredoc use
+	struct s_minishell	*next_command;// pointer to the next command in a pipeline
+	t_env				*env_dup;//duplicated environment (linked list)
+	t_env				*env_dup2;//can i remove safely?
+	t_env				*export;//also i think i can remove
 }						t_minishell;
 
 /****************************************************************/
@@ -199,7 +199,7 @@ void					handle_word_token(t_minishell **current_command,
 							t_minishell **commands);
 void					finalize_current_command(t_minishell **commands,
 							t_minishell **current_command);
-t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
+t_minishell				*parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
 
 /****************************************************************/
 /*																*/
@@ -268,11 +268,11 @@ void					execute_command(t_minishell *ms,
 							t_minishell *token_list, int heredoc_num);
 
 /* --- handle_pipes.c --- */
-int create_pipe(int pipe_fds[2]);
-void close_fd(int fd);
-int dup2_and_close(int oldfd, int newfd);
-void handle_pipes(t_minishell *ms, t_minishell *commands);
-int contains_pipe(t_minishell *commands);
+int						create_pipe(int pipe_fds[2]);
+void					close_fd(int fd);
+int						dup2_and_close(int oldfd, int newfd);
+void					handle_pipes(t_minishell *ms, t_minishell *commands);
+int						contains_pipe(t_minishell *commands);
 
 /* --- pather.c --- */
 char					*handle_absolute_or_relative(char *cmd);

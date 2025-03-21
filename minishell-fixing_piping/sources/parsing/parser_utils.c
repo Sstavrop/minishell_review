@@ -167,7 +167,7 @@ t_minishell *create_new_command(void)
     }
     new_command->arguments = NULL;
     new_command->arguments_tmp = NULL;
-    new_command->arguments_size = NULL;
+    // new_command->arguments_size = NULL;
     new_command->input_fd = -1;
     new_command->output_fd = -1;
     new_command->infile = NULL;
@@ -178,7 +178,7 @@ t_minishell *create_new_command(void)
     new_command->next = NULL;
     new_command->pipe_count = 0;
     new_command->pid = 0;
-    new_command->pipe_fds = NULL;
+    // new_command->pipe_fds = NULL;
     new_command->heredoc_num = 0;
     return new_command;
 }
