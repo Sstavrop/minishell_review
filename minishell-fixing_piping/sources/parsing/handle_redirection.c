@@ -12,6 +12,7 @@
 
 #include "minishell.h"
 
+// Helper function to remove quotes from a string (in-place).
 static char *remove_quotes(char *str) {
     if (!str) {
         return NULL;
@@ -35,7 +36,7 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
     char *line;
 
     // 1. Generate a unique filename.
-    filename = ft_strdup(".heredoc_tmp_"); // Start with a base name.
+   filename = ft_strdup(".heredoc_tmp_"); // Start with a base name.
     if(!filename)
         return -1; //out of memory
 
@@ -63,30 +64,32 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
         return -1;
     }
 
-    // 3. Remove quotes from the delimiter.
-    char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter)); // Remove quotes. *CRITICAL*
-     if (!unquoted_delimiter) {
+    // 3. Remove quotes from the delimiter.  *CRUCIAL*
+    char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter));
+    if (!unquoted_delimiter) {
         close(fd);
-        return -1; // Memory allocation failure.
+        return -1;
     }
-
     // 4. Read input lines until the delimiter is encountered.
     while (1) {
         line = readline("> "); // Use readline for consistent input handling.
         if (!line) {
             // Handle EOF (Ctrl+D).
-            fprintf(stderr, "minishell: warning: here-document delimited by end-of-file (wanted `%s').\n", unquoted_delimiter); //use unquoted
+            fprintf(stderr, "minishell: warning: here-document delimited by end-of-file (wanted `%s').\n", unquoted_delimiter);
             break;
         }
 
-        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0) { //CORRECT comparison
+        // Correctly compare with the UNQUOTED delimiter, and check for newline.
+        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0
+            && line[ft_strlen(unquoted_delimiter)] == '\n') { //check for newline!
             free(line);
             break; // Stop when the delimiter is found.
         }
 
-        ft_putstr_fd(line, fd);
-        ft_putchar_fd('\n', fd); // Write the line and a newline to the file.
-        free(line); //free line
+        // Write the line to the temp file, include newline
+        write(fd, line, ft_strlen(line));
+        write(fd, "\n", 1);
+        free(line);
     }
 
     // 5. Clean up and close.
@@ -95,8 +98,6 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
 
     return 0; // Success.
 }
-
-
 
 int handle_redirections(t_minishell *command, int heredoc_num) {
     int fd_in = -1;
@@ -112,10 +113,22 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
         } else if (command->operator == T_HEREDOC) {
             // --- HERE'S THE HEREDOC HANDLING ---
             char *heredoc_filename = NULL; // Initialize to NULL.
-            if (handle_heredoc(command->infile, &heredoc_filename, heredoc_num) != 0) {
+
+            // *Remove quotes from the delimiter BEFORE calling handle_heredoc*
+            char *unquoted_delimiter = ft_strdup(command->infile); // Duplicate first!
+            if (!unquoted_delimiter) {
+                perror("strdup");
+                return -1;
+            }
+            remove_quotes(unquoted_delimiter); // Remove quotes in place.
+
+            if (handle_heredoc(unquoted_delimiter, &heredoc_filename, heredoc_num) != 0) {
                 // Handle the error.  handle_heredoc should print an error message.
+                free(unquoted_delimiter); // Free the unquoted delimiter.
                 return -1; // Return -1 to indicate failure.
             }
+
+            free(unquoted_delimiter); // Free the unquoted delimiter *after* calling handle_heredoc.
 
             // If handle_heredoc was successful, heredoc_filename now points
             // to the name of the temporary file.
@@ -138,6 +151,7 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
         }
     }
 
+  // ... (rest of handle_redirections - output redirection - remains the same) ...
     if (command->outfile) {
         if (command->operator == OUTPUT) {
             fd_out = open(command->outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
