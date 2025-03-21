@@ -29,7 +29,7 @@ void	special_cases(t_minishell *ms, int i)
 	}
 }
 
-void	normal_case(t_minishell *ms, int i, char **kvtmp) /* original */
+void	normal_case(t_minishell *ms, int i, char **kvtmp)
 {
 	if (replace_value(ms, kvtmp[0]))
 	{
@@ -62,7 +62,7 @@ void	export_init(t_minishell *ms)
 		print_export(ms);
 }
 
-void	valid_export(t_minishell *ms, int i) //*original */
+void	valid_export(t_minishell *ms, int i)
 {
 	char **kvtmp;
 

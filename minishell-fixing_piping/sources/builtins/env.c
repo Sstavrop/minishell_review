@@ -17,9 +17,9 @@ void ft_env(t_minishell *ms, t_minishell *command)
 {
     t_env *tmp;
 
-  if (command->arguments[1]) //check that env has no args
+  if (command->arguments[1])
   {
-      ms->last_exit_status = 1; //set error status
+      ms->last_exit_status = 1;
       fprintf(stderr, "env: too many arguments\n");
       return;
   }
@@ -29,29 +29,8 @@ void ft_env(t_minishell *ms, t_minishell *command)
             ft_printf("%s=%s\n", tmp->key, tmp->value);
         tmp = tmp->next;
     }
-  ms->last_exit_status = 0; //set last exit status
+  ms->last_exit_status = 0;
 }
-
-// void	ft_env(t_minishell *ms)
-// {
-// 	t_env	*tmp;
-
-// 	if (!ms->arguments_tmp[1])
-// 	{
-// 		tmp = ms->env_dup;
-// 		while (tmp)
-// 		{
-// 			if (tmp->value)
-// 				ft_printf("%s=%s\n", tmp->key, tmp->value);
-// 			tmp = tmp->next;
-// 		}
-// 	}
-// 	else
-// 	{
-// 		ms->err = 127;
-// 		printf("env: Impossible action\n");
-// 	}
-// }
 
 void	add_env_var(t_minishell *ms, char *key, char *value)
 {
@@ -63,7 +42,7 @@ void	add_env_var(t_minishell *ms, char *key, char *value)
 	env_add_end(&ms->env_dup, new_var);
 }
 
-void env_init(t_minishell *ms) //verison 2
+void env_init(t_minishell *ms)
 {
     int i = 0;
     char **tmp;
@@ -75,30 +54,28 @@ void env_init(t_minishell *ms) //verison 2
             i++;
             continue;
         }
-        // Check if splitting was successful *before* using tmp[0] and tmp[1]
-        if (!tmp[0] || !strchr(ms->env[i], '=')) {
+        if (!tmp[0] || !strchr(ms->env[i], '=')) 
+        {
             fprintf(stderr, "Invalid environment variable: %s\n", ms->env[i]);
-            // free_array(tmp); // REMOVE THIS
             i++;
             continue;
         }
         if (!tmp[1])
-            tmp[1] = ft_strdup("");  // safe because we check for !tmp above.
+            tmp[1] = ft_strdup("");
         char *key = ft_strdup(tmp[0]);
         char *value = ft_strdup(tmp[1]);
-        if (!key || !value) {
+        if (!key || !value) 
+        {
             perror("strdup failed");
-            // Clean up: free key and value if only one of them was allocated.
-            if (key) free(key);
-            if (value) free(value);
-            // free_array(tmp); // REMOVE THIS
+            if (key) 
+                free(key);
+            if (value)
+                free(value);
             i++;
             continue;
         }
-        // Add the environment variable.
         add_env_var(ms, key, value);
-        // Free the temporary split array.  This is *crucial* to avoid memory leaks.
-        free_array(tmp); // KEEP THIS. Important, the array is used as a temp
+        free_array(tmp);
         i++;
     }
 }

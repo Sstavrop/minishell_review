@@ -18,30 +18,13 @@ void ft_pwd(t_minishell *ms)
 
     if (getcwd(cwd, sizeof(cwd)) != NULL) 
 	{
-        ft_putstr_fd(cwd, STDOUT_FILENO); // Use standard output
+        ft_putstr_fd(cwd, STDOUT_FILENO);
         ft_putchar_fd('\n', STDOUT_FILENO);
-        ms->last_exit_status = 0; // Success
+        ms->last_exit_status = 0;
     }
 	else 
 	{
-        perror("pwd"); // Use perror for system call errors
-        ms->last_exit_status = 1; // Failure
+        perror("pwd");
+        ms->last_exit_status = 1;
     }
 }
-// void	ft_pwd(void)
-// {
-// 	char	*cwd;
-
-// 	cwd = getcwd(NULL, 0);
-// 	if (cwd == NULL)
-// 	{
-// 		perror("getcwd failed");
-// 		return ;
-// 	}
-// 	else
-// 	{
-// 		ft_putstr_fd(cwd, 1);
-// 		ft_putchar_fd('\n', 1);
-// 		free(cwd);
-// 	}
-// }
