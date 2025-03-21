@@ -12,18 +12,26 @@
 
 #include "minishell.h"
 
-t_minishell	*create_token(t_token_types type, char *value)
+t_minishell *create_token(t_token_types type, char *value) 
 {
-	t_minishell	*new_token;
+    t_minishell *new_token;
 
-	new_token = malloc(sizeof(t_minishell));
-	if (!new_token)
-		return (NULL);
-	new_token->type = type;
-	new_token->value = value;
-	new_token->append = 0;
-	new_token->next = NULL;
-	return (new_token);
+	new_token = (t_minishell *)malloc(sizeof(t_minishell));
+    if (!new_token) {
+        perror("malloc failed");
+        return NULL;
+    }
+
+    new_token->type = type;
+    new_token->value = value; // Note: We *are* assigning the value here.
+    new_token->next = NULL;
+    new_token->operator = NO_OPERATOR;
+    new_token->append = 0;
+    new_token->infile = NULL;
+    new_token->outfile = NULL;
+    new_token->input_fd = -1;
+    new_token->output_fd = -1;
+    return new_token;
 }
 
 void	add_token(t_minishell **head, t_minishell *new_token)
