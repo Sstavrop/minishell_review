@@ -25,7 +25,6 @@ SRC								=	main.c \
 									execution/handle_pipes.c \
 									execution/pather.c \
 									parsing/expand_variables.c \
-									parsing/handle_heredoc.c \
 									parsing/handle_redirection.c \
 									parsing/heredoc_utils.c \
                                     parsing/parser_utils.c \
