@@ -17,8 +17,11 @@ void free_token(t_minishell *token)
     if (!token)
         return;
 
-    if (token->value && (token->type == T_INPUT || token->type == T_OUTPUT || token->type == T_APPEND || token->type == T_HEREDOC)) 
+    if (token->value)
+    { 
         free(token->value);
+        token->value = NULL;
+    }
     free(token);
 }
 
