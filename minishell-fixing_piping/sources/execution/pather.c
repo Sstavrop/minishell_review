@@ -47,7 +47,7 @@ char *find_executable_in_paths(char **paths, char *cmd)
     int     i;
     char    *full_path;
 
-    if (!paths) // Added null check
+    if (!paths)
         return (NULL);
     i = 0;
     while (paths[i])
@@ -63,18 +63,17 @@ char *find_executable_in_paths(char **paths, char *cmd)
     return (NULL);
 }
 
-char *pathfinder(char *cmd, t_env *env) {
+char *pathfinder(char *cmd, t_env *env) 
+{
     char **paths;
     char *finalpath;
 
     finalpath = handle_absolute_or_relative(cmd);
     if (finalpath)
         return (finalpath);
-
     paths = get_paths_from_env(env);
     if (!paths)
         return (NULL);
-
     finalpath = find_executable_in_paths(paths, cmd);
     free_array(paths);
     return (finalpath);

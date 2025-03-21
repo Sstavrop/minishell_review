@@ -51,7 +51,7 @@ char **token_list_to_array(t_minishell *token_list)
             if (!argv[count])
             {
                 fprintf(stderr, "Error: Failed to duplicate token value\n");
-                free_array(argv);//free on allocation failure.
+                free_array(argv);
                 return (NULL);
             }
             count++;
@@ -64,47 +64,46 @@ char **token_list_to_array(t_minishell *token_list)
 
 char **convert_env_to_array(t_env *env_list) 
 {
-    int num_vars = 0;
-    t_env *current = env_list;
+    int num_vars; 
+    t_env *current;
     char **env_array;
-    int i = 0;
-    // 1. Count the number of environment variables.
+    int i;
+    size_t len;
+
+    num_vars = 0;
+    current = env_list;
+    i = 0;
     while (current) 
     {
         num_vars++;
         current = current->next;
     }
-    // 2. Allocate memory for the array of char pointers (+1 for NULL terminator).
     env_array = (char **)malloc((num_vars + 1) * sizeof(char *));
     if (!env_array) 
     {
         perror("malloc failed");
-        return NULL; // Return NULL on allocation failure.
+        return (NULL);
     }
-    // 3. Iterate through the linked list and create strings.
     current = env_list;
     while (current) 
     {
-        // Calculate the required size for "key=value\0".
-        size_t len = strlen(current->key) + strlen(current->value) + 2; // +2 for '=' and '\0'
+        len = strlen(current->key) + strlen(current->value) + 2; // +2 for '=' and '\0'
         env_array[i] = (char *)malloc(len * sizeof(char));
-        if (!env_array[i]) {
+        if (!env_array[i]) 
+        {
             perror("malloc failed");
-            // Clean up previously allocated strings before returning.
             while (i > 0) 
             {
                 i--;
                 free(env_array[i]);
             }
             free(env_array);
-            return NULL;
+            return (NULL);
         }
-        // Construct the "key=value" string.
         snprintf(env_array[i], len, "%s=%s", current->key, current->value);
         i++;
         current = current->next;
     }
-    // 4. Null-terminate the array.
     env_array[num_vars] = NULL;
     return env_array;
 }
@@ -129,24 +128,23 @@ void execute_external_command(t_minishell *ms, t_minishell *command)
     pid = fork();
     if (pid == 0)
     {
-        // Child process
         env_arr = convert_env_to_array(ms->env_dup);
         if (!env_arr)
         {
             free(cmd_path);
-            free_command_data(command); // Correct: Free command data in child on error.
+            free_command_data(command);
             perror("failed to create array from env");
             exit(EXIT_FAILURE);
         }
-        if (execve(cmd_path, command->arguments, env_arr) == -1) {
-            free_array(env_arr); //CORRECT: free env_arr if execve fails.
+        if (execve(cmd_path, command->arguments, env_arr) == -1) 
+        {
+            free_array(env_arr);
             handle_exece_failure();
         }
     }
     else if (pid < 0)
         perror("fork failed");
     else
-        // Parent process
         waitpid(pid, NULL, 0);
-    free(cmd_path); //free cmd_path in the parent.
+    free(cmd_path);
 }
