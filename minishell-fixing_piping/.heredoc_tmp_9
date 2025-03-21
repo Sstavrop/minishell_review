@@ -1,0 +1,9 @@
+total 232
+-rw-rw-rw-  1 codespace codespace   2610 Mar 21 10:04 Makefile
+-rw-r--r--  1 codespace codespace     25 Mar 21 09:16 heredoc_tmp0
+-rw-r--r--  1 codespace codespace      0 Mar 21 09:10 heredoc_tmp1
+drwxrwxrwx+ 2 codespace codespace   4096 Mar 21 05:22 includes
+drwxrwxrwx+ 2 codespace codespace   4096 Mar 21 10:58 libft
+-rwxrwxrwx  1 codespace codespace 212336 Mar 21 10:58 minishell
+drwxrwxrwx+ 8 codespace codespace   4096 Mar 21 10:58 objects
+drwxrwxrwx+ 8 codespace codespace   4096 Mar 20 18:39 sources
