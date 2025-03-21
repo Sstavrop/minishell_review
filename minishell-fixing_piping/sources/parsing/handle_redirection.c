@@ -12,7 +12,6 @@
 
 #include "minishell.h"
 
-// Helper function to remove quotes from a string (in-place).
 static char *remove_quotes(char *str) {
     if (!str) {
         return NULL;
@@ -30,7 +29,6 @@ static char *remove_quotes(char *str) {
     return str;
 }
 
-// Function to handle heredoc input.
 int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_num) {
     char *filename;
     int fd;
@@ -41,32 +39,32 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
     if(!filename)
         return -1; //out of memory
 
-    char *num_str = ft_itoa(heredoc_num);
+    char *num_str = ft_itoa(heredoc_num); //turn into str
     if(!num_str)
     {
-        free(filename);
+        free(filename); //free allocated mem
         return -1;
     }
 
-    char *temp = ft_strjoin(filename, num_str);
-    free(filename);
+    char *temp = ft_strjoin(filename, num_str); //combine name and num
+    free(filename); //free old name
     free(num_str);
     if(!temp)
         return -1;
-    filename = temp;
+    filename = temp; //filename now has name + num
 
     *heredoc_filename = filename; // Pass ownership to caller
 
 
     // 2. Open the temporary file for writing.
-    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600); // 0600: Read/write for owner only.
     if (fd == -1) {
         perror("open (heredoc)");
         return -1;
     }
 
     // 3. Remove quotes from the delimiter.
-    char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter));
+    char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter)); // Remove quotes. *CRITICAL*
      if (!unquoted_delimiter) {
         close(fd);
         return -1; // Memory allocation failure.
@@ -77,12 +75,11 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
         line = readline("> "); // Use readline for consistent input handling.
         if (!line) {
             // Handle EOF (Ctrl+D).
-            fprintf(stderr, "minishell: warning: here-document delimited by end-of-file (wanted `%s').\n", unquoted_delimiter);
+            fprintf(stderr, "minishell: warning: here-document delimited by end-of-file (wanted `%s').\n", unquoted_delimiter); //use unquoted
             break;
         }
 
-        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0) { //compare with length of actual delimiter
-
+        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0) { //CORRECT comparison
             free(line);
             break; // Stop when the delimiter is found.
         }
@@ -93,11 +90,12 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
     }
 
     // 5. Clean up and close.
-    free(unquoted_delimiter); // Free the unquoted delimiter.
+    free(unquoted_delimiter); // Free the unquoted delimiter. *CRITICAL*
     close(fd);
 
     return 0; // Success.
 }
+
 
 
 int handle_redirections(t_minishell *command, int heredoc_num) {
@@ -114,22 +112,10 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
         } else if (command->operator == T_HEREDOC) {
             // --- HERE'S THE HEREDOC HANDLING ---
             char *heredoc_filename = NULL; // Initialize to NULL.
-
-            // *Remove quotes from the delimiter BEFORE calling handle_heredoc*
-            char *unquoted_delimiter = ft_strdup(command->infile); // Duplicate first!
-            if (!unquoted_delimiter) {
-                perror("strdup");
-                return -1;
-            }
-            remove_quotes(unquoted_delimiter); // Remove quotes in place.
-
-            if (handle_heredoc(unquoted_delimiter, &heredoc_filename, heredoc_num) != 0) {
+            if (handle_heredoc(command->infile, &heredoc_filename, heredoc_num) != 0) {
                 // Handle the error.  handle_heredoc should print an error message.
-                free(unquoted_delimiter); // Free the unquoted delimiter.
                 return -1; // Return -1 to indicate failure.
             }
-
-            free(unquoted_delimiter); // Free the unquoted delimiter *after* calling handle_heredoc.
 
             // If handle_heredoc was successful, heredoc_filename now points
             // to the name of the temporary file.
