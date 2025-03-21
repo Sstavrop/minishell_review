@@ -12,7 +12,7 @@
 
 #include "minishell.h"
 
-int	ft_iswhitespace(char c)
+int	ft_iswhitespace(char c)// i feel like these should just be added to libft
 {
 	return (c == 32 || (c >= 9 && c <= 13));
 }

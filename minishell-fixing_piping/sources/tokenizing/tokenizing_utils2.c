@@ -20,8 +20,7 @@ int	validate_and_get_quote(const char *input, int *i, t_token_types *type)
 	(*i)++;
 	while (input[*i] && input[*i] != quote)
 	{
-		if (quote == '"' && input[*i] == '\\' && (input[*i + 1] == '"'
-				|| input[*i + 1] == '\\' || input[*i + 1] == '$'))
+		if (quote == '"' && input[*i] == '\\' && (input[*i + 1] == '"' || input[*i + 1] == '\\' || input[*i + 1] == '$'))
 			(*i)++;
 		(*i)++;
 	}
@@ -117,42 +116,39 @@ int handle_quotes(const char *input, t_minishell **head, int *i, t_minishell *ms
     return (1);
 }
 
-#include "minishell.h"
-
-int handle_operator(const char *input, t_minishell **head, int *i) {
-    t_token_types type = set_type(&input[*i]);
+int handle_operator(const char *input, t_minishell **head, int *i) 
+{
+    t_token_types type;
     int op_length;
+    t_minishell *new_token;
 
-    if (type == T_HEREDOC || type == T_APPEND) {
+    type = set_type(&input[*i]);
+    if (type == T_HEREDOC || type == T_APPEND)
         op_length = 2;
-    } else if (type == T_INPUT || type == T_OUTPUT || type == T_PIPE || type == T_SEMICOLON) {
+    else if (type == T_INPUT || type == T_OUTPUT || type == T_PIPE || type == T_SEMICOLON)
         op_length = 1;
-    } else {
-        return -1; // Invalid operator.
-    }
-
-    t_minishell *new_token = create_token(type, ft_strndup(&input[*i], op_length)); // Correct
-    if (!new_token) {
+    else
+        return (-1);
+    new_token = create_token(type, ft_strndup(&input[*i], op_length));
+    if (!new_token) 
+    {
         fprintf(stderr, "Error: Memory allocation failure for operator token.\n");
-        return -1;
+        return (-1);
     }
-    add_token(head, new_token); //we now add token to the list
+    add_token(head, new_token);
     *i += op_length;
-
-    // Check for required filename after redirection operators.
     if (type == T_INPUT || type == T_OUTPUT || type == T_APPEND || type == T_HEREDOC)
     {
-        while (ft_iswhitespace(input[*i])) { //skip spaces
+        while (ft_iswhitespace(input[*i]))
             (*i)++;
-        }
-        if(input[*i] == '\0' || ft_isoperator(&input[*i])) //check if word exists
+        if(input[*i] == '\0' || ft_isoperator(&input[*i]))//thsi is to cdhecdk if a word exists
         {
             fprintf(stderr, "Error: Redirection operator '%s' requires a filename.\n", new_token->value);
-            free_token_list(*head); // Correct: Free the token list on error.
-            return (-1); //we dont free the token here, because we are going to free the list anyways.
+            free_token_list(*head);
+            return (-1); //dont free here because we are going to free the list anyways.
         }
     }
-    return 1;
+    return (1);
 }
 
 int handle_word(const char *input, t_minishell **head, int *i) //echo working

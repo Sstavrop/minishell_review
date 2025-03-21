@@ -113,7 +113,6 @@ int	main(int argc, char **argv, char **envp)
 		}
 		execute_command(&ms, token_list, heredoc_num);
 		heredoc_num++;
-		// free_token_list(token_list);
 		free(ms.input);
 	}
 	rl_clear_history();

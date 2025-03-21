@@ -44,7 +44,7 @@ int set_redirection(t_minishell *command, t_minishell *token)
         if (!command->outfile)
 		{
 			perror("strdup error");
-            return 0;
+            return (0);
 		}
         command->operator = OUTPUT;
     }
@@ -55,7 +55,7 @@ int set_redirection(t_minishell *command, t_minishell *token)
         if (!command->outfile)
         {
             perror("strdup failed");
-            return 0;
+            return (0);
         }
         command->operator = APPEND;
 		command->append = 1;
@@ -127,7 +127,7 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms)
             if (!set_redirection(current_command, tokens)) 
             {
                 free_command_list(commands);
-                return NULL;
+                return (NULL);
             }
             tokens = tokens->next; //skip
         }
@@ -142,7 +142,7 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms)
             if (!new_command) 
             {
                 free_command_list(commands);
-                return NULL;
+                return (NULL);
             }
             current_command->next_command = new_command; //link commands
             current_command = new_command; // Move to the new command.
