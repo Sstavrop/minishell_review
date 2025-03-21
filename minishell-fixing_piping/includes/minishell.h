@@ -261,7 +261,7 @@ void					ft_unset(t_minishell *ms);
 
 /* --- execute_builtins.c --- */
 void					exec_builtin(t_minishell *ms, t_minishell *command);
-int						is_builtin(t_minishell *ms);
+int						is_builtin(t_minishell *command);
 void					execute_commands_loop(t_minishell *ms,
 							t_minishell *commands, int heredoc_num);
 void					execute_command(t_minishell *ms,

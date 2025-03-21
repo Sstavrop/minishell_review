@@ -53,48 +53,42 @@ void exec_builtin(t_minishell *ms, t_minishell *command) { //definition
 // 		ft_cd(ms);
 // }
 
-int	is_builtin(t_minishell *ms)
+int is_builtin(t_minishell *command) // Takes a command pointer
 {
-	int	trigger;
-
-	trigger = 0;
-	if (ms->arguments_tmp == NULL || ms->arguments_tmp[0] == NULL)
-		return (0);
-	if (!ft_strncmp("exit", ms->arguments_tmp[0], 5))
-		trigger = 2;
-	else if (!ft_strncmp("echo", ms->arguments_tmp[0], 5))
-		trigger = 1;
-	else if (!ft_strncmp("env", ms->arguments_tmp[0], 4))
-		trigger = 1;
-	else if (!ft_strncmp("pwd", ms->arguments_tmp[0], 4))
-		trigger = 1;
-	else if (!ft_strncmp("export", ms->arguments_tmp[0], 7))
-		trigger = 1;
-	else if (!ft_strncmp("unset", ms->arguments_tmp[0], 6))
-		trigger = 1;
-	else if (!ft_strncmp("cd", ms->arguments_tmp[0], 3))
-		trigger = 2;
-	return (trigger);
+    if (!command || !command->arguments || !command->arguments[0])
+        return (0);
+    if (!ft_strncmp("exit", command->arguments[0], 5)) // Use arguments[0]
+        return (2);
+    else if (!ft_strncmp("echo", command->arguments[0], 5))
+        return (1);
+    else if (!ft_strncmp("env", command->arguments[0], 4))
+        return (1);
+    else if (!ft_strncmp("pwd", command->arguments[0], 4))
+        return (1);
+    else if (!ft_strncmp("export", command->arguments[0], 7))
+        return (1);
+    else if (!ft_strncmp("unset", command->arguments[0], 6))
+        return (1);
+    else if (!ft_strncmp("cd", command->arguments[0], 3))
+        return (1);
+    return (0);
 }
 
 void execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num) {
-    t_minishell *current = commands; // Initialize current to the head of the command list
-
-    while (current != NULL) {
-        ms->arguments_tmp = current->arguments; // Set arguments_tmp for builtins
+    t_minishell *current = commands;
+    while (current) {
+        ms->arguments_tmp = current->arguments; // For builtins
         if (handle_redirections(current, heredoc_num) < 0) {
-            // Handle redirection errors, if necessary.
-            // You might want to set an error status and break/continue.
-            current = current->next_command; // Move to the *next* command.
+            current = current->next_command;
             continue;
         }
 
-        if (is_builtin(current)) { //pass correct args
-            exec_builtin(ms, current);  // Pass the command structure
+        if (is_builtin(current)) { // Pass current, NOT ms
+            exec_builtin(ms, current); // Pass ms AND current
         } else {
             execute_external_command(ms, current);
         }
-        current = current->next_command;  // Move to the *next* command in the list.
+        current = current->next_command;
     }
 }
 

@@ -84,7 +84,7 @@ void handle_pipes(t_minishell *ms, t_minishell *commands) {
             if (handle_redirections(current_command, ms->heredoc_num) < 0)
                 exit(EXIT_FAILURE);
             ms->arguments_tmp = current_command->arguments; //needed for builtins
-            if (is_builtin(current_command)) { //pass in the current command
+            if (is_builtin(current_command)) { //pass the command
                 exec_builtin(ms, current_command); // Pass current_command
                 exit(ms->last_exit_status);
             } else {
@@ -114,6 +114,7 @@ void handle_pipes(t_minishell *ms, t_minishell *commands) {
         i++;
     }
 }
+
 int contains_pipe(t_minishell *commands) { //simpler check
     t_minishell *current = commands;
     while (current) {
