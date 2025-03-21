@@ -64,7 +64,7 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
         return -1;
     }
 
-    // 3. Remove quotes from the delimiter.  *CRUCIAL*
+    // 3. Remove quotes from the delimiter.
     char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter));
     if (!unquoted_delimiter) {
         close(fd);
@@ -79,9 +79,14 @@ int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_n
             break;
         }
 
-        // Correctly compare with the UNQUOTED delimiter, and check for newline.
-        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0
-            && line[ft_strlen(unquoted_delimiter)] == '\n') { //check for newline!
+		// Trim the newline from the line *before* comparison.
+        size_t line_len = strlen(line);
+        if (line_len > 0 && line[line_len - 1] == '\n') {
+            line[line_len - 1] = '\0'; // Remove the trailing newline
+            line_len--; // Adjust length
+        }
+
+        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0) {
             free(line);
             break; // Stop when the delimiter is found.
         }
