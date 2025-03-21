@@ -74,51 +74,29 @@ int is_builtin(t_minishell *command) // Takes a command pointer
     return (0);
 }
 
-void execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num) 
+void	execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num)
 {
-    t_minishell *current = commands;
+	t_minishell	*current;
 
-    while (current) {
-        if (handle_redirections(current, ms->heredoc_num) < 0) 
-        {
-            current = current->next_command;
-            continue;
-        }
-
-        if (is_builtin(current)) {
-            ms->arguments_tmp = current->arguments; // Set for builtins
-            exec_builtin(ms, current);
-        } else {
-            execute_external_command(ms, current);
-        }
-        current = current->next_command;
-    }
+	current = commands;
+	while (current)
+	{
+		ms->arguments_tmp = current->arguments;
+		if (handle_redirections(current, heredoc_num) < 0)
+		{
+			current = current->next;
+			continue ;
+		}
+		ms->arguments_tmp = current->arguments;
+		if (is_builtin(current))
+			exec_builtin(ms, current);
+		else
+			execute_external_command(ms, current);
+		dup2(ms->ter_in, STDIN_FILENO);
+		dup2(ms->ter_out, STDOUT_FILENO);
+		current = current->next;
+	}
 }
-
-// void	execute_commands_loop(t_minishell *ms, t_minishell *commands,
-// 		int heredoc_num)
-// {
-// 	t_minishell	*current;
-
-// 	current = commands;
-// 	while (current)
-// 	{
-// 		ms->arguments_tmp = current->arguments;
-// 		if (handle_redirections(current, heredoc_num) < 0)
-// 		{
-// 			current = current->next;
-// 			continue ;
-// 		}
-// 		ms->arguments_tmp = current->arguments;
-// 		if (is_builtin(ms))
-// 			exec_builtin(ms);
-// 		else
-// 			execute_external_command(ms, current);
-// 		dup2(ms->ter_in, STDIN_FILENO);
-// 		dup2(ms->ter_out, STDOUT_FILENO);
-// 		current = current->next;
-// 	}
-// }
 
 void execute_command(t_minishell *ms, t_minishell *token_list, int heredoc_num) {
     t_minishell *commands;
