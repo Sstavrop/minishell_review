@@ -114,10 +114,22 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
         } else if (command->operator == T_HEREDOC) {
             // --- HERE'S THE HEREDOC HANDLING ---
             char *heredoc_filename = NULL; // Initialize to NULL.
-            if (handle_heredoc(command->infile, &heredoc_filename, heredoc_num) != 0) {
+
+            // *Remove quotes from the delimiter BEFORE calling handle_heredoc*
+            char *unquoted_delimiter = ft_strdup(command->infile); // Duplicate first!
+            if (!unquoted_delimiter) {
+                perror("strdup");
+                return -1;
+            }
+            remove_quotes(unquoted_delimiter); // Remove quotes in place.
+
+            if (handle_heredoc(unquoted_delimiter, &heredoc_filename, heredoc_num) != 0) {
                 // Handle the error.  handle_heredoc should print an error message.
+                free(unquoted_delimiter); // Free the unquoted delimiter.
                 return -1; // Return -1 to indicate failure.
             }
+
+            free(unquoted_delimiter); // Free the unquoted delimiter *after* calling handle_heredoc.
 
             // If handle_heredoc was successful, heredoc_filename now points
             // to the name of the temporary file.
