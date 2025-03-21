@@ -17,16 +17,16 @@ void exec_builtin(t_minishell *ms, t_minishell *command) { //definition
         return; // Or handle the error appropriately
 
     if (ft_strncmp(command->arguments[0], "exit", 5) == 0) {
-        ft_exit(ms);
+        ft_exit(ms, command);
     } else if (ft_strncmp(command->arguments[0], "cd", 3) == 0) {
         ft_cd(ms);
     } else if (ft_strncmp(command->arguments[0], "pwd", 4) == 0) {
-        ft_pwd();
+        ft_pwd(ms);
     } else if (ft_strncmp(command->arguments[0], "echo", 5) == 0) {
-       ft_echo(ms);
+       ft_echo(ms, command);
     }
      else if (ft_strncmp(command->arguments[0], "env", 4) == 0) {
-        ft_env(ms);
+        ft_env(ms, command);
     }
       else if (ft_strncmp(command->arguments[0], "export", 7) == 0) {
         ft_export(ms);
@@ -74,17 +74,20 @@ int is_builtin(t_minishell *command) // Takes a command pointer
     return (0);
 }
 
-void execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num) {
+void execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num) 
+{
     t_minishell *current = commands;
+
     while (current) {
-        ms->arguments_tmp = current->arguments; // For builtins
-        if (handle_redirections(current, heredoc_num) < 0) {
+        if (handle_redirections(current, ms->heredoc_num) < 0) 
+        {
             current = current->next_command;
             continue;
         }
 
-        if (is_builtin(current)) { // Pass current, NOT ms
-            exec_builtin(ms, current); // Pass ms AND current
+        if (is_builtin(current)) {
+            ms->arguments_tmp = current->arguments; // Set for builtins
+            exec_builtin(ms, current);
         } else {
             execute_external_command(ms, current);
         }

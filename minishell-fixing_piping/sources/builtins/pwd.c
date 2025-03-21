@@ -12,20 +12,36 @@
 
 #include "minishell.h"
 
-void	ft_pwd(void)
+void ft_pwd(t_minishell *ms) 
 {
-	char	*cwd;
+    char cwd[PATH_MAX];
 
-	cwd = getcwd(NULL, 0);
-	if (cwd == NULL)
+    if (getcwd(cwd, sizeof(cwd)) != NULL) 
 	{
-		perror("getcwd failed");
-		return ;
-	}
-	else
+        ft_putstr_fd(cwd, STDOUT_FILENO); // Use standard output
+        ft_putchar_fd('\n', STDOUT_FILENO);
+        ms->last_exit_status = 0; // Success
+    }
+	else 
 	{
-		ft_putstr_fd(cwd, 1);
-		ft_putchar_fd('\n', 1);
-		free(cwd);
-	}
+        perror("pwd"); // Use perror for system call errors
+        ms->last_exit_status = 1; // Failure
+    }
 }
+// void	ft_pwd(void)
+// {
+// 	char	*cwd;
+
+// 	cwd = getcwd(NULL, 0);
+// 	if (cwd == NULL)
+// 	{
+// 		perror("getcwd failed");
+// 		return ;
+// 	}
+// 	else
+// 	{
+// 		ft_putstr_fd(cwd, 1);
+// 		ft_putchar_fd('\n', 1);
+// 		free(cwd);
+// 	}
+// }

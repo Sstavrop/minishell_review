@@ -43,74 +43,77 @@ int dup2_and_close(int oldfd, int newfd) {
 }
 
 
-// Iterative handle_pipes function
-void handle_pipes(t_minishell *ms, t_minishell *commands) {
+void handle_pipes(t_minishell *ms, t_minishell *commands) 
+{
     int num_pipes = commands->pipe_count;
     int pipefd[2];
     pid_t pid;
-    t_minishell *current_command = commands; // Start with the head of the list
-    int in_fd = 0; // Initialize input file descriptor to stdin
-    int i = 0; //initialize before loop
+    t_minishell *current_command = commands;
+    int in_fd = 0; //input starts at standard in
+    int i = 0;
     int status;
-
-    while (i <= num_pipes) {  // Corrected loop condition
-
-        if (i < num_pipes) {
-            if (create_pipe(pipefd) == -1) {
-                return; // Error already printed
-            }
+  
+    while(i <= num_pipes)
+    {
+        if (i < num_pipes) //if it is not the last command, make a pipe
+        {
+            if (create_pipe(pipefd) == -1)
+                return ; //create pipe handles printing the error
         }
-
         pid = fork();
-        if (pid == -1) {
+        if (pid == -1)
+        {
             perror("fork");
             exit(EXIT_FAILURE);
         }
-
-        if (pid == 0) { // Child process
-            // Input Redirection (except for the first command)
-            if (i > 0) {
-              if(dup2_and_close(in_fd, STDIN_FILENO) == -1) //check for errors
-                exit(EXIT_FAILURE);
+        if (pid == 0)//child
+        {
+            if (i > 0) //if it is not the first command
+            {
+                if (dup2_and_close(in_fd, STDIN_FILENO) == -1)
+                   exit(EXIT_FAILURE); //dup2 and close will handle error messages
             }
-
-            // Output Redirection (except for the last command)
+            if (i < num_pipes) // if it is not the last command
+            {
+                close_fd(pipefd[0]); //close the read end of the pipe
+                if(dup2_and_close(pipefd[1], STDOUT_FILENO) == -1)
+                   exit(EXIT_FAILURE);
+            }
+            if (handle_redirections(current_command, ms->heredoc_num) < 0) //handle redirections before execution
+                exit(EXIT_FAILURE);
+            ms->arguments_tmp = current_command->arguments; //set up arguments for builtins
+            if(is_builtin(current_command))
+            {
+                exec_builtin(ms, current_command); //builtin needs command as arg
+                exit(ms->last_exit_status); //exit with builtin status
+            }
+            else
+            {
+                execute_external_command(ms, current_command); //external command needs it too
+                exit(EXIT_FAILURE); //should not get here on success
+            }
+        }
+        else //parent
+        {
             if (i < num_pipes) {
-                close_fd(pipefd[0]); // Close read end in child.
-                if(dup2_and_close(pipefd[1], STDOUT_FILENO) == -1) //check for errors
-                  exit(EXIT_FAILURE);
-            }
-            //handle redirections before execution
-            if (handle_redirections(current_command, ms->heredoc_num) < 0)
-                exit(EXIT_FAILURE);
-            ms->arguments_tmp = current_command->arguments; //needed for builtins
-            if (is_builtin(current_command)) { //pass the command
-                exec_builtin(ms, current_command); // Pass current_command
-                exit(ms->last_exit_status);
-            } else {
-                execute_external_command(ms, current_command); //pass in current command
-                exit(EXIT_FAILURE); // Should never reach here if successful
-            }
-        } else { // Parent process
-            close_fd(pipefd[1]); // Always close write end in parent
-            if (in_fd != 0)
-                close_fd(in_fd);   // Close previous read end (if not stdin)
-            in_fd = pipefd[0]; // Prepare input for the next command
-
-            current_command = current_command->next_command; // Move to next command
-            i++; // Increment the loop counter.
+               close_fd(pipefd[1]); // Always close write end in parent
+               if (in_fd != 0)  //only close if its not default stdin
+                   close_fd(in_fd);   // Close previous read end (if not stdin)
+               in_fd = pipefd[0]; // Prepare input for next command
+           }
+           current_command = current_command->next_command; // Move to next command.
+           i++; // Increment the loop counter.
         }
     }
-     // Wait for *all* child processes to finish, in the parent.
+    //wait for all processes
     i = 0;
-    while(i <= num_pipes)
+    while (i <= num_pipes)
     {
-        waitpid(-1, &status, WUNTRACED | WCONTINUED); // Corrected waitpid call
-        if (WIFEXITED(status)) {
+        waitpid(-1, &status, WUNTRACED | WCONTINUED);
+        if (WIFEXITED(status))
             ms->last_exit_status = WEXITSTATUS(status);
-        } else if (WIFSIGNALED(status)) {
-            ms->last_exit_status = 128 + WTERMSIG(status); // Standard convention
-        }
+        else if (WIFSIGNALED(status))
+            ms->last_exit_status = 128 + WTERMSIG(status);
         i++;
     }
 }

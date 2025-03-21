@@ -221,10 +221,10 @@ void					ft_cd(t_minishell *ms);
 void					set_dir(t_minishell *ms);
 
 /* --- echo.c --- */
-void					ft_echo(t_minishell *ms);
+void					ft_echo(t_minishell *ms, t_minishell *command);
 
 /* --- env.c --- */
-void					ft_env(t_minishell *ms);
+void					ft_env(t_minishell *ms, t_minishell *command);
 void					add_env_var(t_minishell *ms, char *key, char *value);
 void					env_init(t_minishell *ms);
 t_env					*env_new(char *key, char *value);
@@ -234,7 +234,7 @@ int						env_size(t_env *lst);
 void					free_env(t_minishell *ms);
 
 /* --- exit.c --- */
-void					ft_exit(t_minishell *ms);
+void					ft_exit(t_minishell *ms, t_minishell *command);
 int						print_err(char *msg);
 
 /* --- export.c --- */
@@ -248,7 +248,7 @@ void					free_export(t_minishell *ms);
 void					print_export(t_minishell *ms);
 
 /* --- pwd.c --- */
-void					ft_pwd(void);
+void					ft_pwd(t_minishell *ms);
 
 /* --- unset.c --- */
 void					ft_unset(t_minishell *ms);
@@ -262,8 +262,7 @@ void					ft_unset(t_minishell *ms);
 /* --- execute_builtins.c --- */
 void					exec_builtin(t_minishell *ms, t_minishell *command);
 int						is_builtin(t_minishell *command);
-void					execute_commands_loop(t_minishell *ms,
-							t_minishell *commands, int heredoc_num);
+void					execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num);
 void					execute_command(t_minishell *ms,
 							t_minishell *token_list, int heredoc_num);
 

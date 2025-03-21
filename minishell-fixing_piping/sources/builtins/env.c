@@ -13,26 +13,45 @@
 #include "minishell.h"
 #include <stdlib.h>
 
-void	ft_env(t_minishell *ms)
+void ft_env(t_minishell *ms, t_minishell *command) 
 {
-	t_env	*tmp;
+    t_env *tmp;
 
-	if (!ms->arguments_tmp[1])
-	{
-		tmp = ms->env_dup;
-		while (tmp)
-		{
-			if (tmp->value)
-				ft_printf("%s=%s\n", tmp->key, tmp->value);
-			tmp = tmp->next;
-		}
-	}
-	else
-	{
-		ms->err = 127;
-		printf("env: Impossible action\n");
-	}
+  if (command->arguments[1]) //check that env has no args
+  {
+      ms->last_exit_status = 1; //set error status
+      fprintf(stderr, "env: too many arguments\n");
+      return;
+  }
+    tmp = ms->env_dup;
+    while (tmp) {
+        if (tmp->value)
+            ft_printf("%s=%s\n", tmp->key, tmp->value);
+        tmp = tmp->next;
+    }
+  ms->last_exit_status = 0; //set last exit status
 }
+
+// void	ft_env(t_minishell *ms)
+// {
+// 	t_env	*tmp;
+
+// 	if (!ms->arguments_tmp[1])
+// 	{
+// 		tmp = ms->env_dup;
+// 		while (tmp)
+// 		{
+// 			if (tmp->value)
+// 				ft_printf("%s=%s\n", tmp->key, tmp->value);
+// 			tmp = tmp->next;
+// 		}
+// 	}
+// 	else
+// 	{
+// 		ms->err = 127;
+// 		printf("env: Impossible action\n");
+// 	}
+// }
 
 void	add_env_var(t_minishell *ms, char *key, char *value)
 {

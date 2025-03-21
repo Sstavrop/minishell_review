@@ -113,27 +113,82 @@ int	heredoc_redirection(t_minishell *cmd, int heredoc_num)
 	return (0);
 }
 
-int	handle_redirections(t_minishell *cmd, int heredoc_num)
-{
-	int	result;
+int handle_redirections(t_minishell *command, int heredoc_num) {
+    int fd_in = -1;
+    int fd_out = -1;
 
-	if (cmd->type == T_HEREDOC && cmd->infile)
-	{
-		result = heredoc_redirection(cmd, heredoc_num);
-		if (result < 0)
-			return (result);
-	}
-	result = input_redirection(cmd);
-	if (result < 0)
-		return (result);
-	result = output_redirection(cmd);
-	if (result < 0)
-		return (result);
-	if (cmd->type == T_HEREDOC && cmd->infile)
-	{
-		unlink(cmd->infile);
-		free(cmd->infile);
-		cmd->infile = NULL;
-	}
-	return (result);
+    if (command->infile) {
+        if (command->operator == INPUT) {
+            fd_in = open(command->infile, O_RDONLY); // Open for reading
+        } else if (command->operator == HEREDOC) {
+             // You will need to implement heredoc handling *before* this.
+             // This involves creating a temporary file, reading input until
+             // the delimiter, and then opening that temporary file for reading.
+             // For now, I'm just going to create a placeholder.
+             // You *must* replace this with your actual heredoc implementation.
+
+            //PLACEHOLDER:
+            // fd_in = open_heredoc_file(command->infile); // Example function
+            //For now just error out:
+            fprintf(stderr, "minishell: heredoc not implemented yet.\n");
+            return -1;
+        }
+
+        if (fd_in == -1) {
+            perror("open"); // Use perror for system call errors.
+            return -1;      // Return -1 on error.
+        }
+        if (dup2(fd_in, STDIN_FILENO) == -1) { // Correct redirection.
+            perror("dup2");
+            close(fd_in);
+            return -1;
+        }
+        close(fd_in); // Close the original fd after dup2.
+    }
+
+    if (command->outfile) {
+        if (command->operator == OUTPUT) {
+            fd_out = open(command->outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644); // Open for writing, create if it doesn't exist, truncate if it does
+        } else if (command->operator == APPEND) {
+            fd_out = open(command->outfile, O_WRONLY | O_CREAT | O_APPEND, 0644); // Open for writing, create if it doesn't exist, append if it does.
+        }
+
+        if (fd_out == -1) {
+            perror("open");
+            return -1;
+        }
+        if (dup2(fd_out, STDOUT_FILENO) == -1) {
+            perror("dup2");
+            close(fd_out);
+            return -1;
+        }
+        close(fd_out);
+    }
+
+    return 0; // Success
 }
+
+// int	handle_redirections(t_minishell *cmd, int heredoc_num)
+// {
+// 	int	result;
+
+// 	if (cmd->type == T_HEREDOC && cmd->infile)
+// 	{
+// 		result = heredoc_redirection(cmd, heredoc_num);
+// 		if (result < 0)
+// 			return (result);
+// 	}
+// 	result = input_redirection(cmd);
+// 	if (result < 0)
+// 		return (result);
+// 	result = output_redirection(cmd);
+// 	if (result < 0)
+// 		return (result);
+// 	if (cmd->type == T_HEREDOC && cmd->infile)
+// 	{
+// 		unlink(cmd->infile);
+// 		free(cmd->infile);
+// 		cmd->infile = NULL;
+// 	}
+// 	return (result);
+// }
