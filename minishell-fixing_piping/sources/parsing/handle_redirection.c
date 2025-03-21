@@ -12,106 +12,93 @@
 
 #include "minishell.h"
 
-int	assign_redirection(t_minishell *cmd, t_minishell *filename_token,
-		t_token_types type)
-{
-	char	*new_value;
+// Helper function to remove quotes from a string (in-place).
+static char *remove_quotes(char *str) {
+    if (!str) {
+        return NULL;
+    }
 
-	new_value = ft_strdup(filename_token->value);
-	if (!new_value)
-	{
-		ft_printf("Error: Failed to duplicate filename for redirection.\n");
-		return (-1);
-	}
-	if (type == T_INPUT || type == T_HEREDOC)
-	{
-		if (cmd->infile)
-			free(cmd->infile);
-		cmd->infile = new_value;
-		cmd->type = type;
-		cmd->input_fd = -1;
-	}
-	else if (type == T_OUTPUT || type == T_APPEND)
-	{
-		if (cmd->outfile)
-			free(cmd->outfile);
-		cmd->outfile = new_value;
-		cmd->output_fd = -1;
-		cmd->type = type;
-	}
-	return (0);
+    int len = strlen(str);
+    int j = 0;
+
+    for (int i = 0; i < len; i++) {
+        if (str[i] != '\'' && str[i] != '\"') {
+            str[j++] = str[i];
+        }
+    }
+    str[j] = '\0'; // Null-terminate the modified string.
+    return str;
 }
 
-int	input_redirection(t_minishell *cmd)
-{
-	if (cmd->infile)
-	{
-		cmd->input_fd = open(cmd->infile, O_RDONLY);
-		if (cmd->input_fd < 0)
-		{
-			perror("Input redirection Error");
-			return (-1);
-		}
-		dup2(cmd->input_fd, STDIN_FILENO);
-		close(cmd->input_fd);
-	}
-	return (0);
+// Function to handle heredoc input.
+int handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_num) {
+    char *filename;
+    int fd;
+    char *line;
+
+    // 1. Generate a unique filename.
+    filename = ft_strdup(".heredoc_tmp_"); // Start with a base name.
+    if(!filename)
+        return -1; //out of memory
+
+    char *num_str = ft_itoa(heredoc_num);
+    if(!num_str)
+    {
+        free(filename);
+        return -1;
+    }
+
+    char *temp = ft_strjoin(filename, num_str);
+    free(filename);
+    free(num_str);
+    if(!temp)
+        return -1;
+    filename = temp;
+
+    *heredoc_filename = filename; // Pass ownership to caller
+
+
+    // 2. Open the temporary file for writing.
+    fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    if (fd == -1) {
+        perror("open (heredoc)");
+        return -1;
+    }
+
+    // 3. Remove quotes from the delimiter.
+    char *unquoted_delimiter = remove_quotes(ft_strdup(delimiter));
+     if (!unquoted_delimiter) {
+        close(fd);
+        return -1; // Memory allocation failure.
+    }
+
+    // 4. Read input lines until the delimiter is encountered.
+    while (1) {
+        line = readline("> "); // Use readline for consistent input handling.
+        if (!line) {
+            // Handle EOF (Ctrl+D).
+            fprintf(stderr, "minishell: warning: here-document delimited by end-of-file (wanted `%s').\n", unquoted_delimiter);
+            break;
+        }
+
+        if (ft_strncmp(line, unquoted_delimiter, ft_strlen(unquoted_delimiter)) == 0) { //compare with length of actual delimiter
+
+            free(line);
+            break; // Stop when the delimiter is found.
+        }
+
+        ft_putstr_fd(line, fd);
+        ft_putchar_fd('\n', fd); // Write the line and a newline to the file.
+        free(line); //free line
+    }
+
+    // 5. Clean up and close.
+    free(unquoted_delimiter); // Free the unquoted delimiter.
+    close(fd);
+
+    return 0; // Success.
 }
 
-int	output_redirection(t_minishell *cmd)
-{
-	int	flags;
-
-	if (cmd->outfile)
-	{
-		if (cmd->type == T_APPEND)
-		{
-			ft_printf("Debug: Append mode\n");
-			flags = O_WRONLY | O_CREAT | O_APPEND;
-		}
-		else
-		{
-			ft_printf("Debug: Truncate mode\n");
-			flags = O_WRONLY | O_CREAT | O_TRUNC;
-		}
-		ft_printf("Debug: Opening output file: %s\n", cmd->outfile);
-		cmd->output_fd = open(cmd->outfile, flags, 0644);
-		if (cmd->output_fd < 0)
-		{
-			perror("Output redirection Error");
-			return (-1);
-		}
-		dup2(cmd->output_fd, STDOUT_FILENO);
-		close(cmd->output_fd);
-	}
-	return (0);
-}
-
-int	heredoc_redirection(t_minishell *cmd, int heredoc_num)
-{
-	int		result;
-	char	*heredoc_filename;
-
-	if (cmd->infile)
-	{
-		result = handle_heredoc(cmd->infile, &heredoc_filename, heredoc_num);
-		if (result < 0)
-		{
-			ft_printf("Error: Failed to handle heredoc\n");
-			return (result);
-		}
-		if (cmd->infile)
-			free(cmd->infile);
-		cmd->infile = ft_strdup(heredoc_filename);
-		free(heredoc_filename);
-		if (!cmd->infile)
-		{
-			ft_printf("Error: Failed to duplicate heredoc filename\n");
-			return (-1);
-		}
-	}
-	return (0);
-}
 
 int handle_redirections(t_minishell *command, int heredoc_num) {
     int fd_in = -1;
@@ -153,7 +140,6 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
         }
     }
 
-  // ... (rest of handle_redirections - output redirection - remains the same) ...
     if (command->outfile) {
         if (command->operator == OUTPUT) {
             fd_out = open(command->outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
@@ -174,30 +160,4 @@ int handle_redirections(t_minishell *command, int heredoc_num) {
     }
 
     return 0; // Success
-
 }
-
-// int	handle_redirections(t_minishell *cmd, int heredoc_num)
-// {
-// 	int	result;
-
-// 	if (cmd->type == T_HEREDOC && cmd->infile)
-// 	{
-// 		result = heredoc_redirection(cmd, heredoc_num);
-// 		if (result < 0)
-// 			return (result);
-// 	}
-// 	result = input_redirection(cmd);
-// 	if (result < 0)
-// 		return (result);
-// 	result = output_redirection(cmd);
-// 	if (result < 0)
-// 		return (result);
-// 	if (cmd->type == T_HEREDOC && cmd->infile)
-// 	{
-// 		unlink(cmd->infile);
-// 		free(cmd->infile);
-// 		cmd->infile = NULL;
-// 	}
-// 	return (result);
-// }

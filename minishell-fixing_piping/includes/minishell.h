@@ -169,12 +169,9 @@ int						handle_parent_process(pid_t pid,
 int						handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_num);
 
 /* --- handle_redirection.c --- */
-int						assign_redirection(t_minishell *cmd,
-							t_minishell *filename_token, t_token_types type);
-int						input_redirection(t_minishell *cmd);
-int						output_redirection(t_minishell *cmd);
-int						heredoc_redirection(t_minishell *cmd, int heredoc_num);
+int						handle_heredoc(const char *delimiter, char **heredoc_filename, int heredoc_num);
 int						handle_redirections(t_minishell *command, int heredoc_num);
+
 
 /* --- heredoc_utils.c --- */
 int						generate_heredoc_filename(char **heredoc_filename,
