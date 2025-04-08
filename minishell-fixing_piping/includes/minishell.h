@@ -196,6 +196,8 @@ void					handle_word_token(t_minishell **current_command,
 void					finalize_current_command(t_minishell **commands,
 							t_minishell **current_command);
 t_minishell				*parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
+int						calculate_num_pipes(t_minishell *commands);
+
 
 /****************************************************************/
 /*																*/

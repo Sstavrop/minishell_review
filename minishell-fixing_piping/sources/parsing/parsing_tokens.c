@@ -151,3 +151,22 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms)
     }
     return (commands);
 }
+
+
+int calculate_num_pipes(t_minishell *commands) 
+{
+    int count;
+    t_minishell *cmd;
+    
+    count = 0;
+    cmd = commands;
+    // Iterate through the commands. A pipe links 'cmd' to 'cmd->next_command'.
+    while (cmd != NULL && cmd->next_command != NULL) 
+    {
+        // Check if the *current* command's operator indicates a pipe *to the next* command
+        if (cmd->operator == PIPE) 
+            count++;
+        cmd = cmd->next_command;
+    }
+    return (count);
+}

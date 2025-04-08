@@ -55,9 +55,9 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
     int i;
     int status;
   
-    num_pipes = commands->pipe_count;
+    num_pipes = calculate_num_pipes(commands);
     current_command = commands;
-    in_fd = 0;
+    in_fd = STDIN_FILENO;
     i = 0;
     while(i <= num_pipes)
     {
@@ -104,14 +104,21 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
             if (i < num_pipes)
             {
                close_fd(pipefd[1]); // Always close write end in parent
-               if (in_fd != 0)  //only close if its not default stdin
+               if (in_fd != STDIN_FILENO)  //only close if its not default stdin
                    close_fd(in_fd);   // Close previous read end (if not stdin)
                in_fd = pipefd[0]; // Prepare input for next command
            }
-           current_command = current_command->next_command; // Move to next command.
-           i++; // Increment the loop counter.
         }
+        if (pid > 0)
+        {
+            current_command = current_command->next_command; // Move to next command.
+            i++; // Increment the loop counter.
+        }
+        else if (pid < 0)
+            break;
     }
+    if (in_fd != STDIN_FILENO)
+        close_fd(in_fd);
     //wait for all processes
     i = 0;
     while (i <= num_pipes)
