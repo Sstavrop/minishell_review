@@ -43,9 +43,11 @@ char	*get_value(t_minishell *ms, char *str)
 void	set_dir(t_minishell *ms)
 {
 	char	*cwd;
+	t_env	*oldpwd_node;
 
 	cwd = malloc(PATH_MAX);
 	getcwd(cwd, PATH_MAX);
+	oldpwd_node = replace_value(ms, "OLDPWD");
 	if (get_value(ms, "PWD"))
 	{
 		free(replace_value(ms, "PWD")->value);
@@ -53,9 +55,18 @@ void	set_dir(t_minishell *ms)
 	}
 	if (get_value(ms, "OLDPWD"))
 	{
-		free(replace_value(ms, "OLDPWD")->value);
-		replace_value(ms, "OLDPWD")->value = ft_strdup(ms->oldpwd);
+		if (oldpwd_node)
+		{
+			free(oldpwd_node->value);
+			if (ms->oldpwd != NULL)
+				oldpwd_node->value = ft_strdup(ms->oldpwd);
+			else	
+				oldpwd_node->value = ft_strdup("");
+		}
+		// free(replace_value(ms, "OLDPWD")->value);
+		// replace_value(ms, "OLDPWD")->value = ft_strdup(ms->oldpwd);
 	}
+	free(ms->oldpwd);
 	ms->oldpwd = ft_strdup(cwd);
 	free(cwd);
 }
@@ -96,7 +107,7 @@ void	new_dir(t_minishell	*ms, char *directory, char *argument)
 		return ;
 	}
 	set_dir(ms);
-	free(ms->oldpwd);
+	// free(ms->oldpwd);
 }
 
 char	*go_home(t_minishell *ms)
