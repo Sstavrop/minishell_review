@@ -216,7 +216,7 @@ char					*change_tilde(t_minishell *ms, char *dir, char *tmp,
 char					*change_directory(t_minishell *ms, char *dir, char *tmp,
 							char *arg);
 void					ft_cd(t_minishell *ms);
-void					set_dir(t_minishell *ms);
+// void					set_dir(t_minishell *ms);
 
 /* --- echo.c --- */
 void					ft_echo(t_minishell *ms, t_minishell *command);

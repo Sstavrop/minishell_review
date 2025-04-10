@@ -40,36 +40,34 @@ char	*get_value(t_minishell *ms, char *str)
 	return (NULL);
 }
 
-void	set_dir(t_minishell *ms)
-{
-	char	*cwd;
-	t_env	*oldpwd_node;
+// void	set_dir(t_minishell *ms)
+// {
+// 	char	*cwd;
+// 	t_env	*oldpwd_node;
 
-	cwd = malloc(PATH_MAX);
-	getcwd(cwd, PATH_MAX);
-	oldpwd_node = replace_value(ms, "OLDPWD");
-	if (get_value(ms, "PWD"))
-	{
-		free(replace_value(ms, "PWD")->value);
-		replace_value(ms, "PWD")->value = ft_strdup(cwd);
-	}
-	if (get_value(ms, "OLDPWD"))
-	{
-		if (oldpwd_node)
-		{
-			free(oldpwd_node->value);
-			if (ms->oldpwd != NULL)
-				oldpwd_node->value = ft_strdup(ms->oldpwd);
-			else	
-				oldpwd_node->value = ft_strdup("");
-		}
-		// free(replace_value(ms, "OLDPWD")->value);
-		// replace_value(ms, "OLDPWD")->value = ft_strdup(ms->oldpwd);
-	}
-	free(ms->oldpwd);
-	ms->oldpwd = ft_strdup(cwd);
-	free(cwd);
-}
+// 	cwd = malloc(PATH_MAX);
+// 	getcwd(cwd, PATH_MAX);
+// 	oldpwd_node = replace_value(ms, "OLDPWD");
+// 	if (get_value(ms, "PWD"))
+// 	{
+// 		free(replace_value(ms, "PWD")->value);
+// 		replace_value(ms, "PWD")->value = ft_strdup(cwd);
+// 	}
+// 	if (get_value(ms, "OLDPWD"))
+// 	{
+// 		if (oldpwd_node)
+// 		{
+// 			free(oldpwd_node->value);
+// 			if (ms->oldpwd != NULL)
+// 				oldpwd_node->value = ft_strdup(ms->oldpwd);
+// 			else	
+// 				oldpwd_node->value = ft_strdup("");
+// 		}
+// 	}
+// 	free(ms->oldpwd);
+// 	ms->oldpwd = ft_strdup(cwd);
+// 	free(cwd);
+// }
 
 void	ft_cd(t_minishell *ms)
 {
@@ -95,19 +93,75 @@ void	ft_cd(t_minishell *ms)
 	}
 }
 
-void	new_dir(t_minishell	*ms, char *directory, char *argument)
-{
-	int	new_dir;
+// old new_dir before changes to it and before i remove set-dir
+// void	new_dir(t_minishell	*ms, char *directory, char *argument)
+// {
+// 	int	new_dir;
 
-	new_dir = chdir(directory);
-	if (new_dir == -1)
-	{
-		printf("cd: %s: No such file or directory\n", argument);
-		ms->err = 1;
-		return ;
-	}
-	set_dir(ms);
-	// free(ms->oldpwd);
+// 	new_dir = chdir(directory);
+// 	if (new_dir == -1)
+// 	{
+// 		printf("cd: %s: No such file or directory\n", argument);
+// 		ms->err = 1;
+// 		return ;
+// 	}
+// 	set_dir(ms);
+// }
+
+// Remove the old set_dir function entirely.
+
+void    new_dir(t_minishell *ms, char *directory, char *argument)
+{
+    char    path_before_cd[PATH_MAX];
+    char    path_after_cd[PATH_MAX];
+    int     chdir_result;
+    t_env   *pwd_node;
+    t_env   *oldpwd_node;
+    char    *temp_oldpwd_for_env;
+
+    if (getcwd(path_before_cd, PATH_MAX) == NULL) 
+    {
+        perror("cd (getcwd before chdir)");
+        ms->err = 1; 
+        return; 
+    }
+    chdir_result = chdir(directory);
+    if (chdir_result == -1)
+    {
+        printf("cd: %s: No such file or directory\n", argument ? argument : directory); 
+        ms->err = 1;
+        return ;
+    }
+    temp_oldpwd_for_env = path_before_cd; 
+    free(ms->oldpwd); 
+    ms->oldpwd = ft_strdup(path_before_cd);
+    if (!ms->oldpwd)
+         perror("cd (strdup for ms->oldpwd failed)");
+    oldpwd_node = replace_value(ms, "OLDPWD");
+    if (oldpwd_node) 
+	{ 
+        free(oldpwd_node->value);
+        oldpwd_node->value = ft_strdup(temp_oldpwd_for_env); 
+        if (!oldpwd_node->value)
+             perror("cd (strdup for OLDPWD env failed)");
+    }
+    if (getcwd(path_after_cd, PATH_MAX) == NULL) 
+    {
+        perror("cd (getcwd after chdir)");
+        ms->err = 1;
+    } 
+    else 
+    {
+        pwd_node = replace_value(ms, "PWD");
+        if (pwd_node) 
+		{
+            free(pwd_node->value);
+            pwd_node->value = ft_strdup(path_after_cd);
+             if (!pwd_node->value)
+                 perror("cd (strdup for PWD env failed)");
+        }
+    }
+        ms->err = 0;
 }
 
 char	*go_home(t_minishell *ms)
