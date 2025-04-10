@@ -122,6 +122,9 @@ typedef struct s_minishell
 /*																*/
 /****************************************************************/
 
+void print_token_list(t_minishell *token_list);
+
+
 /* --- handle_quotes.c --- */
 char					*handle_single_quote(const char *input, int *i,
 							char *expanded);

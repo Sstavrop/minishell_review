@@ -12,6 +12,41 @@
 
 #include "minishell.h"
 
+// Function to print token details for debugging Stage 1
+void print_token_list(t_minishell *token_list) 
+{
+    t_minishell *current = token_list;
+    int i = 0;
+
+    printf("--- Token List Start ---\n");
+    while (current != NULL) 
+    {
+        printf("Token %d: ", i++);
+        switch (current->type) 
+        {
+            case T_WORD:             printf("T_WORD"); break;
+            case T_SQUOTE_CONTENT:   printf("T_SQUOTE_CONTENT"); break;
+            case T_DQUOTE_CONTENT:   printf("T_DQUOTE_CONTENT"); break;
+            case T_VAR:              printf("T_VAR"); break;
+            case T_EXIT_STATUS:      printf("T_EXIT_STATUS"); break;
+            case T_SPACE:            printf("T_SPACE"); break;
+            case T_PIPE:             printf("T_PIPE"); break;
+            case T_INPUT:            printf("T_INPUT"); break;
+            case T_OUTPUT:           printf("T_OUTPUT"); break;
+            case T_HEREDOC:          printf("T_HEREDOC"); break;
+            case T_APPEND:           printf("T_APPEND"); break;
+            case T_SEMICOLON:        printf("T_SEMICOLON"); break;
+            // Add cases for any other types you have
+            default:                 printf("UNKNOWN"); break;
+        }
+        // Print value safely, enclosed in delimiters for clarity, especially for spaces
+        printf(" | Value: [%s]\n", current->value ? current->value : "NULL"); 
+
+        current = current->next;
+    }
+    printf("--- Token List End ---\n");
+}
+
 void	setup_termios(void)
 {
 	struct termios	termios;
@@ -105,12 +140,13 @@ int	main(int argc, char **argv, char **envp)
 			ms.input = NULL;
             continue ;
 		}
-		token_list = tokenize_input(ms.input, &ms);
+		token_list = tokenize_input(ms.input);
 		if (!token_list)
 		{
 			free(ms.input);
 			continue ;
 		}
+        print_token_list(token_list);
 		execute_command(&ms, token_list, heredoc_num);
 		heredoc_num++;
 		free(ms.input);
