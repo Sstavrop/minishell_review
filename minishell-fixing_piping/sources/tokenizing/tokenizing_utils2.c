@@ -53,8 +53,6 @@ int	create_add_quote(const char *substring, t_minishell **head,
 	return (1);
 }
 
-
-
 int handle_operator(const char *input, t_minishell **head, int *i) 
 {
     t_token_types type;
@@ -90,41 +88,195 @@ int handle_operator(const char *input, t_minishell **head, int *i)
     return (1);
 }
 
-int handle_word(const char *input, t_minishell **head, int *i) //echo working
+int handle_word(const char *input, t_minishell **head, int *i) //modification 1
 {
     int start;
     t_minishell *new_token;
+    char *value;
 
-    start = *i;
-    if (input[*i] == '-' && (input[*i + 1] == '"' || input[*i + 1] == '\'')) 
-	{
-        (*i) += 2;
-        while (input[*i] && input[*i] != input[start + 1])
-            (*i)++;
-        if (input[*i] == input[start + 1])
-            (*i)++;
-    }
-	else
-	{
-        while (input[*i])
-		{
-            if (input[*i] == '"' || input[*i] == '\'')
-			{
-                char quote_char = input[*i];
-                (*i)++;
-                while (input[*i] && input[*i] != quote_char)
-                    (*i)++;
-                if (input[*i] == quote_char)
-                    (*i)++;
+    start = *i; // Remember the start of the potential T_WORD segment
+
+    while (input[*i]) // Loop through characters
+    {
+        // Check for boundaries that end the current word segment
+        if (ft_iswhitespace(input[*i]) || ft_isoperator(&input[*i]) || ft_isquote(input[*i])) 
+            break;
+        // Check for variable/status expansion start
+        if (input[*i] == '$') 
+        {
+            // If there was a word part *before* the '$', create its token first
+            if (*i > start) 
+            {
+                value = ft_strndup(&input[start], *i - start);
+                if (!value) { /* Handle malloc error */ return (-1); }
+                new_token = create_token(T_WORD, value);
+                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                add_token(head, new_token);
             }
-            if (!ft_isword(&input[*i]) && input[*i] != '=')
-                break;
-            (*i)++;
+            // Advance past the '$' itself
+            (*i)++; 
+            // Check for '$?'
+            if (input[*i] == '?') 
+            {
+                value = ft_strdup("?"); // Value for T_EXIT_STATUS is just "?"
+                if (!value) { /* Handle malloc error */ return (-1); }
+                new_token = create_token(T_EXIT_STATUS, value);
+                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                add_token(head, new_token);
+                (*i)++; // Advance past '?'
+                start = *i; // Reset start for the next potential token
+                continue; // Continue the WHILE loop for characters after $?
+            }
+            // Check for '$VAR'
+            else if (ft_isalnum(input[*i]) || input[*i] == '_') 
+            {
+                int var_start = *i; // Start of the variable name
+                while (ft_isalnum(input[*i]) || input[*i] == '_') 
+                    (*i)++; // Consume the variable name
+                value = ft_strndup(&input[var_start], *i - var_start); // Extract name
+                if (!value) { /* Handle malloc error */ return (-1); }
+                new_token = create_token(T_VAR, value); // Create T_VAR token
+                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                add_token(head, new_token);
+                start = *i; // Reset start for the next potential token
+                continue; // Continue the WHILE loop for characters after $VAR
+            } 
+            // Handle '$' followed by something else (or end of string)
+            else 
+            {
+                // The '$' was not followed by '?' or a valid variable start.
+                // Treat the '$' as a literal character.
+                // We already advanced *i past the '$'. We need to step back
+                // so the '$' is included in the next T_WORD token.
+                (*i)--; // Step back to the '$'
+                // Let the main loop logic handle the '$' as a normal character now.
+            }
         }
+        // If it wasn't '$' or if '$' was treated as literal, just advance
+        (*i)++; 
+    } // End of while loop
+    // After the loop (boundary found or end of string), create token for the last segment
+    if (*i > start) 
+    {
+        value = ft_strndup(&input[start], *i - start);
+        if (!value) { /* Handle malloc error */ return (-1); }
+        new_token = create_token(T_WORD, value);
+        if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+        add_token(head, new_token);
     }
-    new_token = create_token(T_WORD, ft_strndup(&input[start], *i - start));
-    if (!new_token || !new_token->value)
-        return (ft_printf("Error: Memory allocation failure\n"), -1);
-    add_token(head, new_token);
-    return (1);
+    return (1); // Return success
 }
+
+
+// attempt/option 2
+// // Helper to check for token boundaries
+// static int is_word_boundary(char c) 
+// {
+//     return (ft_iswhitespace(c) || c == '\'' || c == '\"' || c == '<' || c == '>' || c == '|' || c == ';' || c == '\0');
+// }
+
+// // Alternative approach for Stage 1 word/variable tokenization
+// int handle_word_stage1_alt(const char *input, t_minishell **head, int *i) 
+// {
+//     int start = *i;
+//     char *value = NULL;
+//     t_minishell *new_token = NULL;
+
+//     // Iterate until we hit a boundary character or '$'
+//     while (!is_word_boundary(input[*i]) && input[*i] != '$')
+//         (*i)++;
+//     // If we found word characters before hitting a boundary or '$'
+//     if (*i > start) {
+//         value = ft_strndup(&input[start], *i - start);
+//         if (!value) { /* handle error */ return (-1); }
+//         new_token = create_token(T_WORD, value);
+//         if (!new_token) { /* handle error, free value */ return (-1); }
+//         add_token(head, new_token);
+//     }
+//     // Now check if we stopped because we hit a '$'
+//     if (input[*i] == '$') 
+//     {
+//         int dollar_pos = *i;
+//         (*i)++; // Move past '$'
+//         // Case 1: $?
+//         if (input[*i] == '?') 
+//         {
+//             value = ft_strdup("?"); // Value doesn't need heap? Maybe just check type later?
+//              if (!value) { /* handle error */ return -1; }
+//             new_token = create_token(T_EXIT_STATUS, value);
+//              if (!new_token) { /* handle error, free value */ return -1; }
+//             add_token(head, new_token);
+//             (*i)++; // Move past '?'
+//         }
+//         // Case 2: $VAR
+//         else if (ft_isalnum(input[*i]) || input[*i] == '_') 
+//         {
+//             int var_start = *i;
+//             while (ft_isalnum(input[*i]) || input[*i] == '_') 
+//                 (*i)++;
+//             value = ft_strndup(&input[var_start], *i - var_start);
+//              if (!value) { /* handle error */ return (-1); }
+//             new_token = create_token(T_VAR, value);
+//              if (!new_token) { /* handle error, free value */ return (-1); }
+//             add_token(head, new_token);
+//         }
+//          // Case 3: $$ (Optional PID expansion)
+//          // else if (input[*i] == '$') { ... create T_PID token ... (*i)++; } 
+//         // Case 4: Lone '$' or '$' followed by invalid char
+//         else 
+//         {
+//             // Treat the '$' literally. Create a token for it.
+//             value = ft_strdup("$");
+//              if (!value) { /* handle error */ return (-1); }
+//             new_token = create_token(T_WORD, value); // Treat as T_WORD
+//              if (!new_token) { /* handle error, free value */ return (-1); }
+//             add_token(head, new_token);
+//             // *i was already advanced past '$', so it now points at the invalid char after '$'
+//             // The outer loop in process_tokens will handle that next character.
+//         }
+//     } 
+//     // If we stopped at a boundary character (space, quote, operator), 
+//     // we simply return. The outer loop in process_tokens will handle the boundary.
+//     return (1); // Success
+// }
+
+
+
+// original: int handle_word(const char *input, t_minishell **head, int *i)
+// {
+//     int start;
+//     t_minishell *new_token;
+
+//     start = *i;
+//     if (input[*i] == '-' && (input[*i + 1] == '"' || input[*i + 1] == '\'')) 
+// 	{
+//         (*i) += 2;
+//         while (input[*i] && input[*i] != input[start + 1])
+//             (*i)++;
+//         if (input[*i] == input[start + 1])
+//             (*i)++;
+//     }
+// 	else
+// 	{
+//         while (input[*i])
+// 		{
+//             if (input[*i] == '"' || input[*i] == '\'')
+// 			{
+//                 char quote_char = input[*i];
+//                 (*i)++;
+//                 while (input[*i] && input[*i] != quote_char)
+//                     (*i)++;
+//                 if (input[*i] == quote_char)
+//                     (*i)++;
+//             }
+//             if (!ft_isword(&input[*i]) && input[*i] != '=')
+//                 break;
+//             (*i)++;
+//         }
+//     }
+//     new_token = create_token(T_WORD, ft_strndup(&input[start], *i - start));
+//     if (!new_token || !new_token->value)
+//         return (ft_printf("Error: Memory allocation failure\n"), -1);
+//     add_token(head, new_token);
+//     return (1);
+// }

@@ -127,8 +127,8 @@ char					*handle_single_quote(const char *input, int *i,
 							char *expanded);
 char					*handle_double_quote(const char *input, int *i,
 							char *expanded, t_minishell *ms);
-int						handle_quotes(const char *input, t_minishell **head,
-								int *i, t_minishell *ms);
+int						handle_quotes(const char *input, t_minishell **head, int *i);
+
 
 /* --- token_list.c --- */
 t_minishell				*create_token(t_token_types type, char *value);
@@ -157,9 +157,9 @@ int						handle_word(const char *input, t_minishell **head,
 int						is_valid_flag(const char *arg);
 int						validate_input(const char *input);
 int						parse_token(const char *input, t_minishell **head,
-							int *i, t_minishell *ms);
-t_minishell				*process_tokens(const char *input, t_minishell *ms);
-t_minishell				*tokenize_input(const char *input, t_minishell *ms);
+							int *i);
+t_minishell				*process_tokens(const char *input);
+t_minishell				*tokenize_input(const char *input);
 
 /****************************************************************/
 /*																*/

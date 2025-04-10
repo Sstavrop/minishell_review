@@ -77,10 +77,10 @@ int	validate_input(const char *input)
 	return (1);
 }
 
-int	parse_token(const char *input, t_minishell **head, int *i, t_minishell *ms)
+int	parse_token(const char *input, t_minishell **head, int *i)
 {
 	if (ft_isquote(input[*i]))
-		return (handle_quotes(input, head, i, ms));
+		return (handle_quotes(input, head, i));
 	if (ft_isoperator(&input[*i]))
 		return (handle_operator(input, head, i));
 	if (ft_isword(&input[*i]))
@@ -89,7 +89,7 @@ int	parse_token(const char *input, t_minishell **head, int *i, t_minishell *ms)
 	return (1);
 }
 
-t_minishell *process_tokens(const char *input, t_minishell *ms)
+t_minishell *process_tokens(const char *input)
 {
     t_minishell *head;
     t_minishell *prev_token;
@@ -133,7 +133,7 @@ t_minishell *process_tokens(const char *input, t_minishell *ms)
             free_token_list(head);
             return (NULL);
         }
-        if (parse_token(input, &head, &i, ms) == -1) 
+        if (parse_token(input, &head, &i) == -1) 
 		{
             ft_printf("Error while parsing token\n");
             free_token_list(head);
@@ -216,12 +216,12 @@ t_minishell *process_tokens(const char *input, t_minishell *ms)
 //     return (head);
 // }
 
-t_minishell *tokenize_input(const char *input, t_minishell *ms)
+t_minishell *tokenize_input(const char *input)
 {
     t_minishell *tokens;
 
     if (validate_input(input) == -1)
         return (NULL);
-    tokens = process_tokens(input, ms);
+    tokens = process_tokens(input);
     return (tokens);
 }
