@@ -88,12 +88,12 @@ int handle_operator(const char *input, t_minishell **head, int *i)
     return (1);
 }
 
-//temp commented out
 int handle_word(const char *input, t_minishell **head, int *i) //modification 1
 {
     int start;
     t_minishell *new_token;
     char *value;
+    int var_start;
 
     start = *i; // Remember the start of the potential T_WORD segment
 
@@ -109,9 +109,18 @@ int handle_word(const char *input, t_minishell **head, int *i) //modification 1
             if (*i > start) 
             {
                 value = ft_strndup(&input[start], *i - start);
-                if (!value) { /* Handle malloc error */ return (-1); }
+                if (!value) 
+                { 
+                    perror("handle_word: ft_strndup failed");
+                    return (-1); 
+                }
                 new_token = create_token(T_WORD, value);
-                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                if (!new_token) 
+                {
+                    fprintf(stderr, "handle_word: token creation failed\n");
+                    free(value);
+                    return (-1); 
+                }
                 add_token(head, new_token);
             }
             // Advance past the '$' itself
@@ -120,9 +129,18 @@ int handle_word(const char *input, t_minishell **head, int *i) //modification 1
             if (input[*i] == '?') 
             {
                 value = ft_strdup("?"); // Value for T_EXIT_STATUS is just "?"
-                if (!value) { /* Handle malloc error */ return (-1); }
+                if (!value) 
+                { 
+                    perror("handle_word: ft_strndup failed");
+                    return (-1); 
+                }
                 new_token = create_token(T_EXIT_STATUS, value);
-                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                if (!new_token) 
+                {
+                    fprintf(stderr, "handle_word: token creation failed\n");
+                    free(value);
+                    return (-1); 
+                }
                 add_token(head, new_token);
                 (*i)++; // Advance past '?'
                 start = *i; // Reset start for the next potential token
@@ -131,15 +149,31 @@ int handle_word(const char *input, t_minishell **head, int *i) //modification 1
             // Check for '$VAR'
             else if (ft_isalnum(input[*i]) || input[*i] == '_') 
             {
-                int var_start = *i; // Start of the variable name
+                var_start = *i; // Start of the variable name
+                printf("[DEBUG handle_word] Starting VAR loop. var_start=%d, current char='%c'\n", var_start, input[*i]);
                 while (ft_isalnum(input[*i]) || input[*i] == '_') 
+                {
+                    printf("[DEBUG handle_word]   VAR loop consuming: index=%d, char='%c'\n", *i, input[*i]);
                     (*i)++; // Consume the variable name
+                }
+                printf("[DEBUG handle_word] Ended VAR loop. index=%d, char='%c'\n", *i, input[*i]); // See where it stopped
+                printf("[DEBUG handle_word]   var_start=%d, calculated_len=%d\n", var_start, *i - var_start); // See length used
                 value = ft_strndup(&input[var_start], *i - var_start); // Extract name
-                if (!value) { /* Handle malloc error */ return (-1); }
-                new_token = create_token(T_VAR, value); // Create T_VAR token
-                if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+                printf("[DEBUG handle_word]   Extracted value: [%s]\n", value ? value : "NULL"); // See what was actually extracted
+                if (!value) 
+                { 
+                    perror("handle_word: ft_strndup failed");
+                    return (-1); 
+                }                new_token = create_token(T_VAR, value); // Create T_VAR token
+                if (!new_token) 
+                {
+                    fprintf(stderr, "handle_word: token creation failed\n");
+                    free(value);
+                    return (-1); 
+                }
                 add_token(head, new_token);
                 start = *i; // Reset start for the next potential token
+                printf("[DEBUG handle_word]   Added T_VAR token. Reset start index to %d. Continuing loop.\n", start);
                 continue; // Continue the WHILE loop for characters after $VAR
             } 
             // Handle '$' followed by something else (or end of string)
@@ -160,49 +194,19 @@ int handle_word(const char *input, t_minishell **head, int *i) //modification 1
     if (*i > start) 
     {
         value = ft_strndup(&input[start], *i - start);
-        if (!value) { /* Handle malloc error */ return (-1); }
+        if (!value) 
+        { 
+            perror("handle_word: ft_strndup failed");
+            return (-1); 
+        }
         new_token = create_token(T_WORD, value);
-        if (!new_token) { /* Handle malloc error, free value */ return (-1); }
+        if (!new_token) 
+        {
+            fprintf(stderr, "handle_word: token creation failed\n");
+            free(value);
+            return (-1); 
+        }
         add_token(head, new_token);
     }
     return (1); // Return success
 }
-
-// original: int handle_word(const char *input, t_minishell **head, int *i)
-// {
-//     int start;
-//     t_minishell *new_token;
-
-//     start = *i;
-//     if (input[*i] == '-' && (input[*i + 1] == '"' || input[*i + 1] == '\'')) 
-// 	{
-//         (*i) += 2;
-//         while (input[*i] && input[*i] != input[start + 1])
-//             (*i)++;
-//         if (input[*i] == input[start + 1])
-//             (*i)++;
-//     }
-// 	else
-// 	{
-//         while (input[*i])
-// 		{
-//             if (input[*i] == '"' || input[*i] == '\'')
-// 			{
-//                 char quote_char = input[*i];
-//                 (*i)++;
-//                 while (input[*i] && input[*i] != quote_char)
-//                     (*i)++;
-//                 if (input[*i] == quote_char)
-//                     (*i)++;
-//             }
-//             if (!ft_isword(&input[*i]) && input[*i] != '=')
-//                 break;
-//             (*i)++;
-//         }
-//     }
-//     new_token = create_token(T_WORD, ft_strndup(&input[start], *i - start));
-//     if (!new_token || !new_token->value)
-//         return (ft_printf("Error: Memory allocation failure\n"), -1);
-//     add_token(head, new_token);
-//     return (1);
-// }
