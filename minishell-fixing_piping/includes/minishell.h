@@ -40,18 +40,35 @@ extern int				g_signal_status;
 
 typedef enum e_token_types
 {
-	T_SPACES = 1,
-	T_WORD,
-	T_PIPE,
-	T_INPUT,
-	T_OUTPUT,
-	T_HEREDOC,
-	T_APPEND,
-	T_SINGLEQUOTE,
-	T_DOUBLEQUOTE,
-	T_SEMICOLON,
-	T_OPTION//possibly remove
-}						t_token_types;
+    T_WORD = 1,          // Unquoted word segment
+    T_SQUOTE_CONTENT,    // Content including single quotes '...'
+    T_DQUOTE_CONTENT,    // Content including double quotes "..."
+    T_VAR,               // Variable name (e.g., "USER", "HOME")
+    T_EXIT_STATUS,       // The "?" for $?
+    T_SPACE,             // Whitespace sequence
+    T_PIPE,              // |
+    T_INPUT,             // <
+    T_OUTPUT,            // >
+    T_HEREDOC,           // <<
+    T_APPEND,            // >>
+    T_SEMICOLON,          // ; (If you support it)
+    T_OPTION// maybe remove or integrate into T_WORD? (i see it used in this function: token_list_to_array)
+} t_token_types;
+
+// typedef enum e_token_types
+// {
+// 	T_SPACES = 1,
+// 	T_WORD,
+// 	T_PIPE,
+// 	T_INPUT,
+// 	T_OUTPUT,
+// 	T_HEREDOC,
+// 	T_APPEND,
+// 	T_SQUOTE_CONTENT,
+// 	T_DQUOTE_CONTENT,
+// 	T_SEMICOLON,
+// 	T_OPTION//possibly remove
+// }						t_token_types;
 
 typedef struct s_env
 {
@@ -110,6 +127,8 @@ char					*handle_single_quote(const char *input, int *i,
 							char *expanded);
 char					*handle_double_quote(const char *input, int *i,
 							char *expanded, t_minishell *ms);
+int						handle_quotes(const char *input, t_minishell **head,
+								int *i, t_minishell *ms);
 
 /* --- token_list.c --- */
 t_minishell				*create_token(t_token_types type, char *value);
@@ -129,8 +148,6 @@ int						validate_and_get_quote(const char *input, int *i,
 							t_token_types *type);
 int						create_add_quote(const char *substring,
 							t_minishell **head, t_token_types type);
-int						handle_quotes(const char *input, t_minishell **head,
-							int *i, t_minishell *ms);
 int						handle_operator(const char *input, t_minishell **head,
 							int *i);
 int						handle_word(const char *input, t_minishell **head,

@@ -45,7 +45,7 @@ char **token_list_to_array(t_minishell *token_list)
     count = 0;
     while (tmp)
     {
-        if (tmp->type == T_WORD || tmp->type == T_DOUBLEQUOTE || tmp->type == T_OPTION) 
+        if (tmp->type == T_WORD || tmp->type == T_DQUOTE_CONTENT || tmp->type == T_OPTION) 
         {
             argv[count] = ft_strdup(tmp->value);
             if (!argv[count])

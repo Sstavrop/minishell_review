@@ -120,7 +120,7 @@ t_minishell *parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms)
     commands = current_command;
     while (tokens != NULL) 
     {
-        if (tokens->type == T_WORD || tokens->type == T_DOUBLEQUOTE || tokens->type == T_OPTION)
+        if (tokens->type == T_WORD || tokens->type == T_DQUOTE_CONTENT || tokens->type == T_OPTION)
             add_argument_to_command(current_command, tokens->value);
         else if (tokens->type == T_INPUT || tokens->type == T_OUTPUT || tokens->type == T_APPEND || tokens->type == T_HEREDOC) 
         {

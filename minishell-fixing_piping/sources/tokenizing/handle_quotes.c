@@ -59,3 +59,66 @@ char    *handle_double_quote(const char *input, int *i, char *expanded, t_minish
         (*i)++;
     return (expanded);
 }
+
+int handle_quotes(const char *input, t_minishell **head, int *i, t_minishell *ms) 
+{
+    int start;
+    t_token_types type;
+    char *substring;
+    char *expanded;
+    char *final_str;
+
+    final_str = NULL;
+    while (ft_isquote(input[*i])) 
+	{ 
+        start = *i;
+        if (validate_and_get_quote(input, i, &type) == -1)
+            return (-1);
+        substring = ft_strndup(&input[start], *i - start + 1);
+        if (!substring) 
+		{
+            ft_printf("Error: Memory allocation failure for quote substring.\n");
+            return (-1);
+        }
+        if (type == T_DQUOTE_CONTENT) 
+		{
+            expanded = expand_variable(substring, ms);
+            free(substring);
+            if (!expanded) 
+			{
+                ft_printf("Error: Variable expansion failed\n");
+                free(final_str);
+                return (-1);
+            }
+            if (final_str) 
+			{
+                char *temp = ft_strjoin(final_str, expanded);
+                free(final_str);
+                final_str = temp;
+            } 
+			else
+                final_str = ft_strdup(expanded);
+            free(expanded);
+        } 
+		else 
+		{
+            if (final_str) 
+			{
+                char *temp = ft_strjoin(final_str, substring);
+                free(final_str);
+                final_str = temp;
+            } 
+			else 
+                final_str = ft_strdup(substring);
+            free(substring);
+        }
+        (*i)++;
+    }
+    if (create_add_quote(final_str, head, T_WORD) == -1) 
+	{
+        free(final_str);
+        return (-1);
+    }
+    free(final_str);
+    return (1);
+}

@@ -50,9 +50,9 @@ int	ft_isword(const char *str)
 t_token_types	set_type(const char *str)
 {
 	if (str[0] == '\'')
-		return (T_SINGLEQUOTE);
+		return (T_SQUOTE_CONTENT);
 	else if (str[0] == '"')
-		return (T_DOUBLEQUOTE);
+		return (T_DQUOTE_CONTENT);
 	else if (str[0] == '<' && str[1] == '<')
 		return (T_HEREDOC);
 	else if (str[0] == '>' && str[1] == '>')

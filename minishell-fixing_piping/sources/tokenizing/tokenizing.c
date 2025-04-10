@@ -94,7 +94,10 @@ t_minishell *process_tokens(const char *input, t_minishell *ms)
     t_minishell *head;
     t_minishell *prev_token;
     t_minishell *last_token;
-    int i;
+    t_minishell *space_token;
+	char		*space_value;
+	int i;
+	
 
 	head = NULL;
 	prev_token = NULL;
@@ -102,9 +105,28 @@ t_minishell *process_tokens(const char *input, t_minishell *ms)
 	i = 0;
     while (input[i] != '\0') 
 	{
-        i = skip_whitespaces(input, i);
-        if (input[i] == '\0')
-            break;
+		if (ft_iswhitespace(input[i]))
+		{
+			while (ft_iswhitespace(input[i]))
+				i++;
+			space_value = ft_strdup(" ");
+			if (!space_value)
+			{
+				perror("strdup failed for T_SPACE");
+				free_token_list(head);
+				return (NULL);
+			}
+			space_token = create_token(T_SPACE, space_value);
+			if (!space_token)
+			{
+				perror("create_token failed for T_SPACE");
+				free(space_value);
+				free_token_list(head);
+				return (NULL);
+			}
+			add_token(&head, space_token);
+			continue;
+		}
         if (!ft_isquote(input[i]) && !ft_isoperator(&input[i]) && !ft_isword(&input[i])) 
 		{
             ft_printf("Error: Invalid character %c at position %d\n", input[i], i);
@@ -140,6 +162,59 @@ t_minishell *process_tokens(const char *input, t_minishell *ms)
     }
     return (head);
 }
+
+
+// original: t_minishell *process_tokens(const char *input, t_minishell *ms)
+// {
+//     t_minishell *head;
+//     t_minishell *prev_token;
+//     t_minishell *last_token;
+//     int i;
+
+// 	head = NULL;
+// 	prev_token = NULL;
+// 	last_token = NULL;
+// 	i = 0;
+//     while (input[i] != '\0') 
+// 	{
+//         i = skip_whitespaces(input, i);
+//         if (input[i] == '\0')
+//             break;
+//         if (!ft_isquote(input[i]) && !ft_isoperator(&input[i]) && !ft_isword(&input[i])) 
+// 		{
+//             ft_printf("Error: Invalid character %c at position %d\n", input[i], i);
+//             free_token_list(head);
+//             return (NULL);
+//         }
+//         if (parse_token(input, &head, &i, ms) == -1) 
+// 		{
+//             ft_printf("Error while parsing token\n");
+//             free_token_list(head);
+//             return (NULL);
+//         }
+//         if (head && head->type == T_SEMICOLON) 
+// 		{
+//             ft_printf("Error: Unexpected ';' at the beginning\n");
+//             free_token_list(head);
+//             return (NULL);
+//         }
+//         if (prev_token && (prev_token->type == T_INPUT || prev_token->type == T_OUTPUT
+//                 || prev_token->type == T_HEREDOC || prev_token->type == T_APPEND)) 
+// 			{
+//             last_token = get_last_token(head);
+//             if (!last_token || last_token->type != T_WORD) 
+// 			{
+//                 ft_printf("Error: Redirection operator must be followed by a filename\n");
+//                 free_token_list(head);
+//                 return (NULL);
+//             }
+//         }
+//         if (prev_token && prev_token->type == T_SEMICOLON)
+//             prev_token = NULL;
+//         prev_token = get_last_token(head);
+//     }
+//     return (head);
+// }
 
 t_minishell *tokenize_input(const char *input, t_minishell *ms)
 {
