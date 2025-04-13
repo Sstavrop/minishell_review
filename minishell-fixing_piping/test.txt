@@ -1,4 +1,0 @@
-Line one with pattern
-Line two
-Another line with pattern here
-Last line

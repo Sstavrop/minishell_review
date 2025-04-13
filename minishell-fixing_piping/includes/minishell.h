@@ -91,7 +91,6 @@ typedef struct s_minishell
 	// int					output;// i cant find
 	char				**arguments; //arg array for the *current*command
 	char				**arguments_tmp;//temp  arguments --Only used for builtins
-	// int					*arguments_size;//possibly remove if not used (i think its not used anywhere at all.)
 	char				**env; //original environemtn taken from the mains envp
 	char				*prompt;
 	char				*oldpwd;
@@ -126,10 +125,6 @@ void print_token_list(t_minishell *token_list);
 
 
 /* --- handle_quotes.c --- */
-char					*handle_single_quote(const char *input, int *i,
-							char *expanded);
-char					*handle_double_quote(const char *input, int *i,
-							char *expanded, t_minishell *ms);
 int						handle_quotes(const char *input, t_minishell **head, int *i);
 
 
@@ -173,13 +168,17 @@ t_minishell				*tokenize_input(const char *input);
 /* --- expand_variables.c --- */
 char					*get_environment_value(const char *variable_name,
 							t_env *env_list);
-char					*handle_exit_status(char *expanded, int *i,
-							int last_exit_status);
-char					*handle_env_variable(const char *input, char *expanded,
-							int *i, t_env *env_list);
-char					*build_expanded_string(const char *input, int *i,
-							char *expanded, t_minishell *ms);
-char					*expand_variable(const char *input, t_minishell *ms);
+// char					*handle_exit_status(char *expanded, int *i,
+// 							int last_exit_status);
+// char					*handle_env_variable(const char *input, char *expanded,
+// 							int *i, t_env *env_list);
+// char					*build_expanded_string(const char *input, int *i,
+// 							char *expanded, t_minishell *ms);
+// char					*expand_variable(const char *input, t_minishell *ms);
+char					*expand_string_segment(const char *segment, t_minishell *ms);
+t_minishell				*expand_token_list(t_minishell *raw_tokens, t_minishell *ms);
+
+
 
 /* --- handle_heredoc.c --- */
 int						handle_child_process(char *heredoc_filename,
@@ -342,4 +341,7 @@ void					sort_export(t_minishell *ms);
 /* --- signals.c --- */
 void					signal_handler(int signum);
 void					signal_init(void);
+
+void					reset_minishell_state(t_minishell *ms);
+
 #endif
