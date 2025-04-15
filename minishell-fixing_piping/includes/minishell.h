@@ -55,21 +55,6 @@ typedef enum e_token_types
     T_OPTION// maybe remove or integrate into T_WORD? (i see it used in this function: token_list_to_array)
 } t_token_types;
 
-// typedef enum e_token_types
-// {
-// 	T_SPACES = 1,
-// 	T_WORD,
-// 	T_PIPE,
-// 	T_INPUT,
-// 	T_OUTPUT,
-// 	T_HEREDOC,
-// 	T_APPEND,
-// 	T_SQUOTE_CONTENT,
-// 	T_DQUOTE_CONTENT,
-// 	T_SEMICOLON,
-// 	T_OPTION//possibly remove
-// }						t_token_types;
-
 typedef struct s_env
 {
 	char				*key;
@@ -212,7 +197,6 @@ void					add_command_to_list(t_minishell **head,
 // 							t_minishell **current_command);
 // t_minishell				*parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
 t_minishell				*parse_tokens_into_commands(t_minishell *expanded_tokens, t_minishell *ms);
-int						calculate_num_pipes(t_minishell *commands);
 
 /****************************************************************/
 /*																*/
@@ -280,6 +264,7 @@ void					close_fd(int fd);
 int						dup2_and_close(int oldfd, int newfd);
 void					handle_pipes(t_minishell *ms, t_minishell *commands);
 int						contains_pipe(t_minishell *commands);
+int						calculate_num_pipes(t_minishell *commands);
 
 /* --- pather.c --- */
 char					*handle_absolute_or_relative(char *cmd);
