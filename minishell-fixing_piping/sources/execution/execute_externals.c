@@ -108,43 +108,52 @@ char **convert_env_to_array(t_env *env_list)
     return env_array;
 }
 
-void execute_external_command(t_minishell *ms, t_minishell *command)
+pid_t execute_external_command(t_minishell *ms, t_minishell *command)
 {
     pid_t   pid;
-    char    *cmd_path;
-    char    **env_arr;
+    char    *cmd_path = NULL; 
+    char    **env_arr = NULL; 
 
-    if (!command || !command->arguments || !command->arguments[0] || !command->arguments[0][0]) 
-    {
-        fprintf(stderr, "Error: empty command\n");
-        return ;
+    // --- NULL Checks ---
+    if (!command || !command->arguments || !command->arguments[0] || !command->arguments[0][0]) {
+        fprintf(stderr, "minishell: Error: empty command\n"); 
+        ms->last_exit_status = 1; 
+        return (-1); // Change 2: Return -1 on error
     }
+
+    // --- Find Command Path ---
     cmd_path = pathfinder(command->arguments[0], ms->env_dup);
-    if (!cmd_path)
-    {
-        fprintf(stderr, "Error: Command not found: %s\n", command->arguments[0]);
-        return ;
+    if (!cmd_path) {
+        fprintf(stderr, "minishell: %s: command not found\n", command->arguments[0]);
+        ms->last_exit_status = 127; 
+        return (-1); // Change 3: Return -1 on error
     }
+
+    // --- Fork Process ---
     pid = fork();
-    if (pid == 0)
-    {
-        env_arr = convert_env_to_array(ms->env_dup);
-        if (!env_arr)
-        {
-            free(cmd_path);
-            free_command_data(command);
-            perror("failed to create array from env");
-            exit(EXIT_FAILURE);
-        }
-        if (execve(cmd_path, command->arguments, env_arr) == -1) 
-        {
-            free_array(env_arr);
-            handle_exece_failure();
-        }
+
+    // --- Fork Error ---
+    if (pid < 0) { 
+        perror("minishell: fork failed");
+        free(cmd_path); 
+        ms->last_exit_status = 1; 
+        return (-1); // Change 4: Return -1 on error
     }
-    else if (pid < 0)
-        perror("fork failed");
-    else
-        waitpid(pid, NULL, 0);
-    free(cmd_path);
+    // --- Child Process ---
+    else if (pid == 0) { 
+        env_arr = convert_env_to_array(ms->env_dup);
+        if (!env_arr) { /* ... error handling ... */ exit(EXIT_FAILURE); }
+        execve(cmd_path, command->arguments, env_arr); 
+        perror("minishell"); 
+        free(cmd_path); 
+        free_array(env_arr);
+        exit(126); // Child exits, doesn't return
+    }
+    // --- Parent Process ---
+    else { 
+        // Free path in parent AFTER fork
+        free(cmd_path); 
+        // Change 5: Return the child's PID to the caller
+        return (pid); 
+    }
 }

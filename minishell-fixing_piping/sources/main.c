@@ -13,35 +13,81 @@
 #include "minishell.h"
 
 // Function to print token details for debugging Stage 1
-void print_token_list(t_minishell *token_list) 
-{
-    t_minishell *current = token_list;
-    int i = 0;
+// void print_token_list(t_minishell *token_list) 
+// {
+//     t_minishell *current = token_list;
+//     int i = 0;
 
-    printf("--- Token List Start ---\n");
-    while (current != NULL) 
-    {
-        printf("Token %d: ", i++);
-        switch (current->type) 
-        {
-            case T_WORD:             printf("T_WORD"); break;
-            case T_SQUOTE_CONTENT:   printf("T_SQUOTE_CONTENT"); break;
-            case T_DQUOTE_CONTENT:   printf("T_DQUOTE_CONTENT"); break;
-            case T_VAR:              printf("T_VAR"); break;
-            case T_EXIT_STATUS:      printf("T_EXIT_STATUS"); break;
-            case T_SPACE:            printf("T_SPACE"); break;
-            case T_PIPE:             printf("T_PIPE"); break;
-            case T_INPUT:            printf("T_INPUT"); break;
-            case T_OUTPUT:           printf("T_OUTPUT"); break;
-            case T_HEREDOC:          printf("T_HEREDOC"); break;
-            case T_APPEND:           printf("T_APPEND"); break;
-            case T_SEMICOLON:        printf("T_SEMICOLON"); break;
-            default:                 printf("UNKNOWN"); break;
+//     printf("--- Token List Start ---\n");
+//     while (current != NULL) 
+//     {
+//         printf("Token %d: ", i++);
+//         switch (current->type) 
+//         {
+//             case T_WORD:             printf("T_WORD"); break;
+//             case T_SQUOTE_CONTENT:   printf("T_SQUOTE_CONTENT"); break;
+//             case T_DQUOTE_CONTENT:   printf("T_DQUOTE_CONTENT"); break;
+//             case T_VAR:              printf("T_VAR"); break;
+//             case T_EXIT_STATUS:      printf("T_EXIT_STATUS"); break;
+//             case T_SPACE:            printf("T_SPACE"); break;
+//             case T_PIPE:             printf("T_PIPE"); break;
+//             case T_INPUT:            printf("T_INPUT"); break;
+//             case T_OUTPUT:           printf("T_OUTPUT"); break;
+//             case T_HEREDOC:          printf("T_HEREDOC"); break;
+//             case T_APPEND:           printf("T_APPEND"); break;
+//             case T_SEMICOLON:        printf("T_SEMICOLON"); break;
+//             default:                 printf("UNKNOWN"); break;
+//         }
+//         printf(" | Value: [%s]\n", current->value ? current->value : "NULL"); // this shit is enclosed in delimiters for clarity, especially for spaces
+//         current = current->next;
+//     }
+//     printf("--- Token List End ---\n");
+// }
+
+// Helper function to print the final command structures for debugging Stage 4
+void print_command_list(t_minishell *command_list)
+{
+    t_minishell *cmd = command_list;
+    int cmd_num = 0;
+    printf("\n--- Parsed Command List ---\n");
+    while (cmd != NULL) {
+        printf("Command %d:\n", cmd_num);
+        printf("  Arguments: ");
+        if (cmd->arguments) {
+            for (int i = 0; cmd->arguments[i]; i++) 
+            {
+                printf("[%s] ", cmd->arguments[i]);
+            }
+        } else {
+            printf("(NULL)");
         }
-        printf(" | Value: [%s]\n", current->value ? current->value : "NULL"); // this shit is enclosed in delimiters for clarity, especially for spaces
-        current = current->next;
+        printf("\n");
+        printf("  Infile: [%s]\n", cmd->infile ? cmd->infile : "NULL");
+        printf("  Outfile: [%s]\n", cmd->outfile ? cmd->outfile : "NULL");
+        printf("  Append Flag: %d\n", cmd->append);
+        printf("  Operator to Next: ");
+        switch (cmd->operator) {
+             // Note: Operator now refers to connection to *next* command or redirection type
+             // We might need to store redirection type separately if needed here.
+             // Let's assume operator stores PIPE or the last redirection type seen for this cmd.
+            case T_PIPE: printf("PIPE (|)\n"); break;
+            case T_INPUT: printf("INPUT (<) (Filename stored)\n"); break;
+            case T_OUTPUT: printf("OUTPUT (>) (Filename stored)\n"); break;
+            case T_APPEND: printf("APPEND (>>) (Filename stored)\n"); break;
+            case T_HEREDOC: printf("HEREDOC (<<) (Delimiter stored)\n"); break; // Use T_HEREDOC from enum
+            default:
+                if (cmd->operator == NO_OPERATOR)
+                    printf("NO_OPERATOR (End or ;)\n");
+                else
+                    printf("UNKNOWN/UNHANDLED OPERATOR (%d)\n", cmd->operator);
+                break;
+        }
+        printf("  Next Command Pointer: %p\n", cmd->next_command);
+        printf("---------------------------\n");
+        cmd = cmd->next_command; // Move to the next command in the pipeline
+        cmd_num++;
     }
-    printf("--- Token List End ---\n");
+     printf("--- End Parsed Command List ---\n");
 }
 
 void	setup_termios(void)
@@ -118,35 +164,34 @@ void reset_minishell_state(t_minishell *ms)
 int main(int argc, char **argv, char **envp)
 {
     t_minishell ms;
-    t_minishell *token_list_raw = NULL;      // To store Stage 1 result
-    t_minishell *token_list_expanded = NULL; // To store Stage 2 result
-    // t_minishell *token_list_final = NULL; // For Stage 3/4 result (Future)
-    // t_minishell *commands = NULL;         // For Stage 4 result (Future)
+    t_minishell *token_list_raw = NULL;
+    t_minishell *token_list_expanded = NULL;
+    t_minishell *command_list_head = NULL; // To store Stage 4 result
     int         heredoc_num;
 
     // --- Initial Setup ---
     (void)argc; // Suppress unused variable warning if argc isn't used
     (void)argv; // Suppress unused variable warning if argv isn't used
+    
+    // Initialize ms struct members FIRST
     init_minishell_first_time(&ms, envp); // Handles env copy etc.
     
-    setup_termios(); // Set terminal attributes (e.g., disable ECHOCTL)
-    signal_init();   // Set up signal handlers (Ctrl+C, Ctrl+\)
-    heredoc_num = 0; // Initialize counter for potential heredocs
+    setup_termios(); // Set terminal attributes
+    signal_init();   // Set up signal handlers
+    heredoc_num = 0; // Initialize counter
+    (void)heredoc_num; // Mark as unused for now until execution uses it
 
     // --- Main Shell Loop ---
     while (1)
     {
-        reset_minishell_state(&ms); // Reset per-command state (fds, args etc.)
+        reset_minishell_state(&ms); // Reset per-command state
         ms.input = prompt();        // Get input line (allocates memory)
 
         // Check for EOF (Ctrl+D)
         if (!ms.input) 
         {
-            printf("exit\n"); // Standard behavior on Ctrl+D with empty line
-            // Perform clean exit cleanup here before breaking
-            // free_env(&ms); // free_env might be better called *after* loop
-            // rl_clear_history();
-            break; 
+            printf("exit\n");       // Standard behavior on Ctrl+D with empty line
+            break;                  // Exit the loop
         }
 
         // Check for empty input line
@@ -154,74 +199,66 @@ int main(int argc, char **argv, char **envp)
         {
             free(ms.input);
             ms.input = NULL; 
-            continue; // Skip processing, get new prompt
-        }
-        // --- Stage 1: Raw Tokenization ---
-        token_list_raw = tokenize_input(ms.input); 
-        if (!token_list_raw) {
-            free(ms.input); 
-            ms.input = NULL;
-            // Tokenizer likely printed an error. Set generic error status?
-            ms.last_exit_status = 1; // Or 2 for syntax errors? Check convention.
-            continue; // Skip to next prompt
+            continue;               // Skip processing, get new prompt
         }
         
-        // Optional: Debug print Stage 1 result
-        // printf("\n--- Raw Token List ---\n");
-        // print_token_list(token_list_raw);
+        // Add valid input to readline history
+        add_history(ms.input); 
 
+        // --- Stage 1: Raw Tokenization ---
+        token_list_raw = tokenize_input(ms.input); // Gets raw tokens
+        if (!token_list_raw) 
+        {
+            free(ms.input); 
+            ms.input = NULL;
+            ms.last_exit_status = 2; // Syntax error
+            continue;                // Skip to next prompt
+        }
+        
         // --- Stage 2: Expansion ---
-        token_list_expanded = expand_token_list(token_list_raw, &ms);
-        // NOTE: expand_token_list should handle freeing token_list_raw itself
-
-        if (!token_list_expanded) {
+        token_list_expanded = expand_token_list(token_list_raw, &ms); // Expands variables/status
+        // Assumption: expand_token_list frees token_list_raw on success or error
+        if (!token_list_expanded) 
+        {
             // Expansion failed (error message likely printed inside)
             free(ms.input); 
             ms.input = NULL;
-            ms.last_exit_status = 1; // Indicate error
-            continue; // Skip to next prompt
+            ms.last_exit_status = 1; // Indicate general error
+            continue;                // Skip to next prompt
         }
 
-        // Debug Print Stage 2 Result (Useful for testing)
-        printf("\n--- Expanded Token List ---\n");
-        print_token_list(token_list_expanded);
-        printf("--- End Expanded Token List ---\n");
-
-        // --- Stage 3: Quote Removal (Placeholder - Future Step) ---
-        // token_list_final = remove_quotes(token_list_expanded); 
-        // // remove_quotes would free token_list_expanded
-        // if (!token_list_final) { /* handle error, free ms.input */ continue; }
-        // printf("\n--- Final Token List (Quotes Removed) ---\n");
-        // print_token_list(token_list_final);
+        // --- Stage 4: Joining & Argument Assembly ---
+        command_list_head = parse_tokens_into_commands(token_list_expanded, &ms); // Builds command structures
         
-        // --- Stage 4: Argument Assembly (Placeholder - Future Step) ---
-        // This might build the command list with char** arguments.
-        // Or it might be integrated into execute_command/parsing step.
-        // commands = parse_and_assemble(token_list_final, &ms);
-        // // assemble would free token_list_final
-        // if (!commands) { /* handle error, free ms.input */ continue; }
+        // --- Cleanup Intermediate Token List ---
+        // Now that Stage 4 has processed the expanded list, we can free it.
+        free_token_list(token_list_expanded);
+        token_list_expanded = NULL; 
 
+        // --- Check Stage 4 Result ---
+        if (!command_list_head) 
+        {
+            // Parser failed (syntax error or allocation failure)
+            // Parser should have set ms.last_exit_status and maybe printed an error
+            free(ms.input); 
+            ms.input = NULL;
+            continue;                 // Skip to next prompt
+        }
 
-        // --- Stage 5: Execution ---
-        // TODO: Adapt execute_command later! 
-        // For now, we pass the result of Stage 2 (expanded tokens).
-        // execute_command still contains the old parse_tokens_into_commands, 
-        // which expects raw tokens and doesn't handle Stage 3/4 yet. 
-        // Execution might fail or be incorrect until execute_command/parsing is updated.
-        
-        // TEMPORARY CALL - Expects token list (Stage 2 output for now)
-        execute_command(&ms, token_list_expanded, heredoc_num); 
+        // --- Optional: Debug Print Stage 4 Result ---
+        printf("\n--- Parsed Command List ---\n");
+        print_command_list(command_list_head);
+        printf("--- End Parsed Command List ---\n");
 
-        // Increment heredoc count *after* potential use in execute_command
-        // Maybe reset per command in reset_minishell_state? Depends on design.
-        // heredoc_num++; 
+        // --- Stage 5: Execution (Placeholder) ---
+        // TODO: Adapt execute_command (or create new exec function, e.g., execute_pipeline) 
+        //       to take command_list_head as input instead of a token list.
+        printf(">>> Skipping execution for now <<<\n"); 
+        // execute_command(&ms, command_list_head, heredoc_num); // Future call
 
         // --- Cleanup for this iteration ---
-        // IMPORTANT: Determine if execute_command (or functions it calls like
-        // free_command_list) frees the token list it receives. 
-        // If YES -> Remove the line below.
-        // If NO  -> Keep the line below.
-        free_token_list(token_list_expanded); // Free the list from Stage 2
+        free_command_list(command_list_head); // Free the command structures for this line
+        command_list_head = NULL;             
         
         free(ms.input); // Free the raw input line from readline
         ms.input = NULL; 
@@ -229,52 +266,15 @@ int main(int argc, char **argv, char **envp)
     } // End while loop
 
     // --- Final Cleanup ---
+    printf("Performing final cleanup...\n"); // Optional debug message
     rl_clear_history();
-    free_env(&ms);         // Free the duplicated environment list
-    free(ms.oldpwd);       // Free oldpwd if it was ever allocated
-    close(ms.ter_in);      // Close saved terminal FDs
-    close(ms.ter_out);
-    // Add any other global cleanup needed
+    free_env(&ms);         
+    free(ms.oldpwd);       
+    // Ensure terminal FDs are valid before closing
+    if (ms.ter_in != -1) close(ms.ter_in);      
+    if (ms.ter_out != -1) close(ms.ter_out);
+    // Add any other necessary cleanup (e.g., freeing PATH info if separate)
 
+    printf("Minishell exit.\n"); // Optional debug message
     return (ms.last_exit_status); // Exit shell with the last command's status
 }
-
-// int	main(int argc, char **argv, char **envp) //original --or-- pre-stage 2
-// {
-// 	t_minishell	ms;
-// 	t_minishell	*token_list;
-// 	int			heredoc_num;
-
-// 	(void)argc;
-// 	(void)argv;
-// 	setup_termios();
-// 	init_minishell_first_time(&ms, envp);
-// 	signal_init();
-// 	heredoc_num = 0;
-// 	while (1)
-// 	{
-// 		reset_minishell_state(&ms);
-// 		ms.input = prompt();
-//         if(!ms.input)
-//             break;//or exit(EXIT_SUCCESS);
-// 		if (*ms.input == '\0')
-// 		{
-// 			free(ms.input);
-// 			ms.input = NULL;
-//             continue ;
-// 		}
-// 		token_list = tokenize_input(ms.input);
-// 		if (!token_list)
-// 		{
-// 			free(ms.input);
-// 			continue ;
-// 		}
-//         print_token_list(token_list);
-// 		execute_command(&ms, token_list, heredoc_num);
-// 		heredoc_num++;
-// 		free(ms.input);
-// 	}
-// 	rl_clear_history();
-// 	free_env(&ms);
-// 	return (0);
-// }

@@ -121,9 +121,6 @@ typedef struct s_minishell
 /*																*/
 /****************************************************************/
 
-void print_token_list(t_minishell *token_list);
-
-
 /* --- handle_quotes.c --- */
 int						handle_quotes(const char *input, t_minishell **head, int *i);
 
@@ -179,7 +176,6 @@ char					*expand_string_segment(const char *segment, t_minishell *ms);
 t_minishell				*expand_token_list(t_minishell *raw_tokens, t_minishell *ms);
 
 
-
 /* --- handle_heredoc.c --- */
 int						handle_child_process(char *heredoc_filename,
 							const char *delimiter);
@@ -208,15 +204,15 @@ void					add_command_to_list(t_minishell **head,
 							t_minishell *new_command);
 
 /* --- parsing_tokens --- */
-int						set_redirection(t_minishell *command, t_minishell *token);
-void					handle_word_token(t_minishell **current_command,
-							t_minishell *tokens, int *command_count,
-							t_minishell **commands);
-void					finalize_current_command(t_minishell **commands,
-							t_minishell **current_command);
-t_minishell				*parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
+// int						set_redirection(t_minishell *command, t_minishell *token);
+// void					handle_word_token(t_minishell **current_command,
+// 							t_minishell *tokens, int *command_count,
+// 							t_minishell **commands);
+// void					finalize_current_command(t_minishell **commands,
+// 							t_minishell **current_command);
+// t_minishell				*parse_tokens_into_commands(t_minishell *tokens, t_minishell *ms);
+t_minishell				*parse_tokens_into_commands(t_minishell *expanded_tokens, t_minishell *ms);
 int						calculate_num_pipes(t_minishell *commands);
-
 
 /****************************************************************/
 /*																*/
@@ -280,8 +276,8 @@ void					ft_unset(t_minishell *ms);
 void					exec_builtin(t_minishell *ms, t_minishell *command);
 int						is_builtin(t_minishell *command);
 void					execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num);
-void					execute_command(t_minishell *ms,
-							t_minishell *token_list, int heredoc_num);
+void					execute_command(t_minishell *ms, t_minishell *command_list_head, int heredoc_num) 
+
 
 /* --- handle_pipes.c --- */
 int						create_pipe(int pipe_fds[2]);
@@ -299,7 +295,7 @@ char					*pathfinder(char *cmd, t_env *env);
 
 /* --- execute_externals.c --- */
 char					**token_list_to_array(t_minishell *token_list);
-void					execute_external_command(t_minishell *ms, t_minishell *command);
+pid_t					execute_external_command(t_minishell *ms, t_minishell *command);
 char					**convert_env_to_array(t_env *env_list);
 void					handle_exece_failure(void);
 int						count_tokens(t_minishell *token_list);
@@ -343,5 +339,8 @@ void					signal_handler(int signum);
 void					signal_init(void);
 
 void					reset_minishell_state(t_minishell *ms);
+void					print_command_list(t_minishell *command_list);
+// void					print_token_list(t_minishell *token_list);
+
 
 #endif

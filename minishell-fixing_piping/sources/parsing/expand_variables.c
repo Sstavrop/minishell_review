@@ -58,11 +58,14 @@ char *expand_string_segment(const char *segment, t_minishell *ms)
                     free(result); return (NULL);
                 }
                 var_value_str = get_environment_value(var_name, ms->env_dup);
-                if (var_value_str) { // Append value if found
+                if (var_value_str) 
+                { // Append value if found
                     temp_join = ft_strjoin(result, var_value_str);
                     free(result);
                     result = temp_join;
-                } else {
+                } 
+                else 
+                {
                     // If variable not found, append nothing (empty string - strjoin handles NULL?)
                     // Safety: ensure ft_strjoin handles NULL arg or append "" explicitly
                      temp_join = ft_strjoin(result, ""); // Explicitly join empty string
@@ -71,14 +74,18 @@ char *expand_string_segment(const char *segment, t_minishell *ms)
                 }
                 free(var_name);
                 // 'i' is already past the variable name
-            } else {
+            } 
+            else 
+            {
                 // Lone '$' or followed by invalid char
                 temp_join = ft_strjoin(result, "$");
                 free(result);
                 result = temp_join;
                 // 'i' is already past the '$', do nothing more here, loop continues
             }
-        } else {
+        } 
+        else 
+        {
             // Handle normal character
             single_char_str[0] = segment[i];
             temp_join = ft_strjoin(result, single_char_str);
@@ -86,30 +93,21 @@ char *expand_string_segment(const char *segment, t_minishell *ms)
             result = temp_join;
             i++;
         }
-
         // Check if strjoin failed in any branch
-        if (!result) {
+        if (!result) 
+        {
              perror("minishell: expand_string_segment: ft_strjoin failed");
-             // Potential memory leak here if any intermediate strings weren't freed
-             // This simple strjoin loop is prone to leaks on failure.
-             // A buffer-based approach is safer/more efficient.
+             // Potential memory leak here if any intermediate strings weren't freed according to research, such a simple strjoin loop is prone to leaks on failure.
              return (NULL);
         }
     }
     return (result);
 }
 
-/* // NOTE on efficiency/safety: 
-// Repeatedly using ft_strjoin like this (freeing the old result each time) 
-// is inefficient (O(n^2)) and makes error handling tricky (potential leaks if 
-// strjoin fails mid-process). A better approach for building strings involves:
-// 1. Calculate final length first, then allocate once and copy pieces.
-// 2. Use a dynamic buffer (like a t_list of chars or a realloc strategy).
-// However, for simplicity now, ft_strjoin demonstrates the logic.
-*/
 
 // Helper to add a token to the end of a list (avoids repeated traversal)
-static void add_token_to_end(t_minishell **head, t_minishell **tail, t_minishell *new_token) {
+static void add_token_to_end(t_minishell **head, t_minishell **tail, t_minishell *new_token) 
+{
     if (!new_token) return;
     if (*head == NULL) {
         *head = new_token;
@@ -123,7 +121,8 @@ static void add_token_to_end(t_minishell **head, t_minishell **tail, t_minishell
 // Stage 2: Expands variables and status in a raw token list.
 // Returns the head of a *new* list of processed tokens.
 // Frees the original raw_tokens list.
-t_minishell *expand_token_list(t_minishell *raw_tokens, t_minishell *ms) {
+t_minishell *expand_token_list(t_minishell *raw_tokens, t_minishell *ms) 
+{
     t_minishell *current = raw_tokens;
     t_minishell *next_raw = NULL;
     t_minishell *new_head = NULL;
