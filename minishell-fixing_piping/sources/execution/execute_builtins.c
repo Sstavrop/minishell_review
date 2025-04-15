@@ -19,7 +19,7 @@ void exec_builtin(t_minishell *ms, t_minishell *command)
     if (ft_strncmp(command->arguments[0], "exit", 5) == 0)
         ft_exit(ms, command);
     else if (ft_strncmp(command->arguments[0], "cd", 3) == 0)
-        ft_cd(ms);
+        ft_cd(ms, command);
     else if (ft_strncmp(command->arguments[0], "pwd", 4) == 0)
         ft_pwd(ms);
     else if (ft_strncmp(command->arguments[0], "echo", 5) == 0)
@@ -27,9 +27,9 @@ void exec_builtin(t_minishell *ms, t_minishell *command)
     else if (ft_strncmp(command->arguments[0], "env", 4) == 0)
         ft_env(ms, command);
     else if (ft_strncmp(command->arguments[0], "export", 7) == 0)
-        ft_export(ms);
+        ft_export(ms, command);
     else if (ft_strncmp(command->arguments[0], "unset", 6) == 0)
-        ft_unset(ms);
+        ft_unset(ms, command);
 }
 
 int is_builtin(t_minishell *command)

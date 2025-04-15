@@ -221,17 +221,12 @@ int						calculate_num_pipes(t_minishell *commands);
 /****************************************************************/
 
 /* --- cd.c --- */
-t_env					*replace_value(t_minishell *ms, char *str);
-void					new_dir(t_minishell *ms, char *directory,
-							char *argument);
-char					*get_value(t_minishell *ms, char *str);
-char					*go_home(t_minishell *ms);
-char					*change_tilde(t_minishell *ms, char *dir, char *tmp,
-							char *arg);
-char					*change_directory(t_minishell *ms, char *dir, char *tmp,
-							char *arg);
-void					ft_cd(t_minishell *ms);
-// void					set_dir(t_minishell *ms);
+t_env	*replace_value(t_minishell *ms, char *str);
+char	*get_value(t_minishell *ms, char *str);
+void ft_cd(t_minishell *ms, t_minishell *command);
+void    new_dir(t_minishell *ms, char *directory_target, char *original_arg_for_error);
+char *get_home_directory(t_minishell *ms, const char *arg);
+char *expand_tilde_path(t_minishell *ms, const char *arg);
 
 /* --- echo.c --- */
 void					ft_echo(t_minishell *ms, t_minishell *command);
@@ -252,11 +247,11 @@ int						print_err(char *msg);
 
 /* --- export.c --- */
 void					duplicate(t_minishell *ms);
-void					valid_export(t_minishell *ms, int i);
-void					export_init(t_minishell *ms);
-void					ft_export(t_minishell *ms);
-void					normal_case(t_minishell *ms, int i, char **kvtmp);
-void					special_cases(t_minishell *ms, int i);
+void					valid_export(t_minishell *ms, const char *arg_str);
+void					export_init(t_minishell *ms, t_minishell *command);
+void					ft_export(t_minishell *ms, t_minishell * command);
+void					normal_case(t_minishell *ms, const char *arg_str, char **kvtmp);
+void					special_cases(t_minishell *ms, const char *arg_str);
 void					free_export(t_minishell *ms);
 void					print_export(t_minishell *ms);
 
@@ -264,7 +259,7 @@ void					print_export(t_minishell *ms);
 void					ft_pwd(t_minishell *ms);
 
 /* --- unset.c --- */
-void					ft_unset(t_minishell *ms);
+void					ft_unset(t_minishell *ms, t_minishell *command);
 
 /****************************************************************/
 /*																*/
@@ -276,7 +271,7 @@ void					ft_unset(t_minishell *ms);
 void					exec_builtin(t_minishell *ms, t_minishell *command);
 int						is_builtin(t_minishell *command);
 void					execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredoc_num);
-void					execute_command(t_minishell *ms, t_minishell *command_list_head, int heredoc_num) 
+void					execute_command(t_minishell *ms, t_minishell *command_list_head, int heredoc_num);
 
 
 /* --- handle_pipes.c --- */

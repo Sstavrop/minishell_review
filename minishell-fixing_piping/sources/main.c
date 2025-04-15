@@ -45,6 +45,7 @@
 // }
 
 // Helper function to print the final command structures for debugging Stage 4
+
 void print_command_list(t_minishell *command_list)
 {
     t_minishell *cmd = command_list;
