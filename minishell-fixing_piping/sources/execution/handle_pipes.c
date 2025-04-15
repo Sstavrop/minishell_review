@@ -54,7 +54,8 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
     int in_fd;
     int i;
     int status;
-  
+    int fd_to_close;
+
     num_pipes = calculate_num_pipes(commands);
     current_command = commands;
     in_fd = STDIN_FILENO;
@@ -72,19 +73,27 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
             perror("fork");
             exit(EXIT_FAILURE);
         }
-        if (pid == 0)//child
+        if (pid == 0)//child block
         {
             if (i > 0) //if it is not the first command
             {
+                printf("Child (cmd %d): Attempting dup2_and_close(in_fd=%d, STDIN_FILENO)\n", i, in_fd);
+                fd_to_close = in_fd; // Save value before dup2_and_close closes it
                 if (dup2_and_close(in_fd, STDIN_FILENO) == -1)
-                   exit(EXIT_FAILURE); //dup2 and close will handle error messages
+                    exit(EXIT_FAILURE); //dup2 and close will handle error messages
+                printf("Child (cmd %d): Closed read end from prev pipe: %d\n", i, in_fd); 
             }
             if (i < num_pipes) // if it is not the last command
             {
+                printf("Child (cmd %d): Closing unused READ end pipefd[0]=%d\n", i, pipefd[0]);
                 close_fd(pipefd[0]); //close the read end of the pipe
+                printf("Child (cmd %d): Attempting dup2_and_close(pipefd[1]=%d, STDOUT_FILENO)\n", i, pipefd[1]);
+                fd_to_close = pipefd[1];
                 if(dup2_and_close(pipefd[1], STDOUT_FILENO) == -1)
                    exit(EXIT_FAILURE);
+                printf("Child (cmd %d): Ran dup2_and_close for pipefd[1]=%d -> STDOUT\n", i, fd_to_close); 
             }
+            printf("Child (cmd %d): About to execute [%s]...\n", i, current_command->arguments[0]);
             if (handle_redirections(current_command, ms->heredoc_num) < 0) //handle redirections before execution
                 exit(EXIT_FAILURE);
             ms->arguments_tmp = current_command->arguments; //set up arguments for builtins
@@ -99,13 +108,17 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
                 exit(EXIT_FAILURE); //should not get here on success
             }
         }
-        else //parent
+        else //parent block
         {
             if (i < num_pipes)
             {
                close_fd(pipefd[1]); // Always close write end in parent
+               printf("Parent: Closed pipefd[1]=%d for cmd %d\n", pipefd[1], i); // Debug close
                if (in_fd != STDIN_FILENO)  //only close if its not default stdin
+               {
                    close_fd(in_fd);   // Close previous read end (if not stdin)
+                   printf("Parent: Closed previous in_fd=%d for cmd %d\n", in_fd, i); // Debug close
+               }
                in_fd = pipefd[0]; // Prepare input for next command
            }
         }
@@ -118,7 +131,10 @@ void handle_pipes(t_minishell *ms, t_minishell *commands)
             break;
     }
     if (in_fd != STDIN_FILENO)
+    {
         close_fd(in_fd);
+        printf("Parent: Closed FINAL in_fd=%d\n", in_fd);
+    }
     //wait for all processes
     i = 0;
     while (i <= num_pipes)

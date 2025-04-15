@@ -253,9 +253,8 @@ int main(int argc, char **argv, char **envp)
 
         // --- Stage 5: Execution (Placeholder) ---
         // TODO: Adapt execute_command (or create new exec function, e.g., execute_pipeline) 
-        //       to take command_list_head as input instead of a token list.
-        printf(">>> Skipping execution for now <<<\n"); 
-        // execute_command(&ms, command_list_head, heredoc_num); // Future call
+        //       to take command_list_head as input instead of a token list. 
+        execute_command(&ms, command_list_head, heredoc_num); // Future call
 
         // --- Cleanup for this iteration ---
         free_command_list(command_list_head); // Free the command structures for this line
