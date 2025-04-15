@@ -58,6 +58,7 @@ void    execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredo
     t_minishell *current;
     pid_t       child_pid; // To store PID from external command
     int         status;    // To store waitpid status
+    int wait_return_value; //added for debugging
 
     current = commands;
     while (current)
@@ -86,30 +87,42 @@ void    execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredo
             exec_builtin(ms, current); 
             // Builtin functions should set ms->last_exit_status directly
         }
-        else
+        else // Not builtin
         {
-            // === Execute External Command ===
-            child_pid = execute_external_command(ms, current); // Now returns pid_t
+            child_pid = execute_external_command(ms, current);
 
-            // Check if fork/exec setup succeeded (pid > 0)
             if (child_pid > 0) 
             {
-                // === WAIT for the external command ===
-                waitpid(child_pid, &status, 0); 
+                // --- Adding Debug Prints Here ---
+                fprintf(stderr, "[DEBUG exec_loop] Parent: Waiting for child PID: %d\n", child_pid);
+                
+                wait_return_value = waitpid(child_pid, &status, 0); // Capture return value
+                
+                fprintf(stderr, "[DEBUG exec_loop] Parent: waitpid returned: %d\n", wait_return_value);
+                if (wait_return_value < 0) { // Check for waitpid error specifically
+                    perror("minishell: waitpid error in exec_loop"); // Print system error if waitpid fails
+                }
+                fprintf(stderr, "[DEBUG exec_loop] Parent: Raw status from waitpid: %d\n", status);
+                // --- End Debug Prints ---
 
-                // === Update exit status based on wait status ===
-                if (WIFEXITED(status)) {
-                    ms->last_exit_status = WEXITSTATUS(status);
-                } else if (WIFSIGNALED(status)) {
-                    // Handle signals (like Ctrl+C killing the child)
-                    ms->last_exit_status = 128 + WTERMSIG(status);
-                    // Optional: Print signal messages like bash
-                    if (WTERMSIG(status) == SIGINT) fprintf(stderr, "\n"); 
-                    if (WTERMSIG(status) == SIGQUIT) fprintf(stderr, "Quit: %d\n", WTERMSIG(status)); 
-                    g_signal_status = ms->last_exit_status; // Update global if needed
+                // Now update exit status based on wait status
+                if (wait_return_value > 0) { // Only analyze status if waitpid succeeded
+                    if (WIFEXITED(status)) {
+                        ms->last_exit_status = WEXITSTATUS(status);
+                        fprintf(stderr, "[DEBUG exec_loop] Child exited normally with status: %d\n", ms->last_exit_status);
+                    } else if (WIFSIGNALED(status)) {
+                        ms->last_exit_status = 128 + WTERMSIG(status);
+                         fprintf(stderr, "[DEBUG exec_loop] Child terminated by signal: %d (Status set to %d)\n", WTERMSIG(status), ms->last_exit_status);
+                        if (WTERMSIG(status) == SIGINT) fprintf(stderr, "\n"); 
+                        if (WTERMSIG(status) == SIGQUIT) fprintf(stderr, "Quit: %d\n", WTERMSIG(status)); 
+                        // g_signal_status = ms->last_exit_status; // Maybe update global?
+                    }
+                } else {
+                    // waitpid likely returned -1 (error)
+                    ms->last_exit_status = 1; // Set generic error if wait failed
                 }
             }
-            // If child_pid < 0, execute_external_command already set exit status
+            // else: execute_external_command returned -1, error status already set inside it
         }
 
         // --- Restore Original FDs ---
@@ -124,9 +137,6 @@ void    execute_commands_loop(t_minishell *ms, t_minishell *commands, int heredo
     }
 }
 
-// Now, this function receives the already parsed command list. 
-//It just needs to check for pipes and dispatch to the correct execution function,
-// eitehr (handle_pipes or execute_commands_loop).
 
 // Refactored execute_command - Takes COMMAND list head
 void execute_command(t_minishell *ms, t_minishell *command_list_head, int heredoc_num) 
